@@ -110,29 +110,5 @@ export const toPascalCase = (str: string): string => {
 };
 
 export const getGcashCharge = (amount: number) => {
-  let charge = 0;
-
-  if (amount <= 2000) {
-    // 1–2000: 10 pesos per 500
-    charge = Math.ceil(amount / 500) * 10;
-  } else if (amount <= 5000) {
-    // First 2000 = 40
-    charge = 40;
-    const remaining = amount - 2000;
-    charge += Math.ceil(remaining / 500) * 8;
-  } else if (amount <= 10000) {
-    // First 5000 = 90
-    charge = 90;
-    const remaining = amount - 5000;
-    charge += Math.ceil(remaining / 500) * 6;
-  } else {
-    // First 10000 = 150
-    charge = 150;
-    const remaining = amount - 10000;
-    charge += Math.ceil(remaining / 500) * 4;
-  }
-
-  charge = Math.round(charge / 5) * 5;
-
-  return charge;
+  return Math.ceil(amount / 1000) * 10;
 };
