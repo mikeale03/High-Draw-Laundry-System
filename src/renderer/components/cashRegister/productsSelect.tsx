@@ -14,6 +14,7 @@ type Props = {
   onSelect: (product: Product) => void;
   inputValue: string;
   onInputChange: (input: string) => void;
+  autofocus?: boolean;
 };
 
 const handleGetProducts = debounce(async (searchText: string) => {
@@ -25,7 +26,7 @@ const handleGetProducts = debounce(async (searchText: string) => {
 }, 300);
 
 const ProductsSelect = forwardRef<SelectInstance<Opt> | null, Props>(
-  ({ onSelect, inputValue, onInputChange }, ref) => {
+  ({ onSelect, inputValue, onInputChange, autofocus }, ref) => {
     const [productOptions, setProductOptions] = useState<Opt[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [menuIsOpen, setMenuIsOpen] = useState(false);
@@ -77,7 +78,7 @@ const ProductsSelect = forwardRef<SelectInstance<Opt> | null, Props>(
         value={null}
         onChange={(opt) => opt && !isLoading && onSelect(opt.product)}
         options={productOptions}
-        autoFocus
+        autoFocus={autofocus}
         onKeyDown={onKeyDown}
         isLoading={isLoading}
         menuIsOpen={menuIsOpen}

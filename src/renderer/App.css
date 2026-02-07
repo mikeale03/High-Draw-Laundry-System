@@ -104,6 +104,12 @@ nav .nav-link {
   color: var(--color-primary);
 }
 
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 @media print {
   .print-show {
     display: block;

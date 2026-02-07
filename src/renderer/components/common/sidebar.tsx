@@ -10,6 +10,8 @@ import {
   faPersonDigging,
   faPesoSign,
   faPhone,
+  faShirt,
+  faSocks,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { NavLink } from 'react-router-dom';
@@ -34,6 +36,38 @@ const Sidebar = () => {
         style={user?.role === 'admin' ? { marginBottom: '65px' } : undefined}
       >
         <ul className="nav flex-column mt-3">
+          <NavLink to="laundry-register" className="mb-3">
+            {({ isActive }) => (
+              <li
+                className={`nav-link cursor-pointer text-center rounded bg-white mx-3 py-3 px-0 transition-all
+              ${isActive && 'active'}`}
+                style={{ fontSize: '0.8em' }}
+              >
+                <FontAwesomeIcon
+                  icon={faShirt}
+                  size="lg"
+                  className="color-primary"
+                />
+                <p className="m-0 text-center">Laundry Register</p>
+              </li>
+            )}
+          </NavLink>
+          <NavLink to="laundry-entries" className="mb-3">
+            {({ isActive }) => (
+              <li
+                className={`nav-link cursor-pointer text-center rounded bg-white mx-3 py-3 px-0 transition-all
+              ${isActive && 'active'}`}
+                style={{ fontSize: '0.8em' }}
+              >
+                <FontAwesomeIcon
+                  icon={faSocks}
+                  size="lg"
+                  className="color-primary"
+                />
+                <p className="m-0 text-center">Laundry Entries</p>
+              </li>
+            )}
+          </NavLink>
           <NavLink to="cash-register" className="mb-3">
             {({ isActive }) => (
               <li
@@ -151,7 +185,7 @@ const Sidebar = () => {
             )}
           </NavLink>
           <NavLink
-            to="mobile-numbers"
+            to="customers"
             className="mb-3"
             style={hasItems ? { pointerEvents: 'none' } : {}}
           >
@@ -166,7 +200,7 @@ const Sidebar = () => {
                   size="lg"
                   className="color-primary"
                 />
-                <p className="m-0 text-center">Mobile Numbers</p>
+                <p className="m-0 text-center">Customers</p>
               </li>
             )}
           </NavLink>

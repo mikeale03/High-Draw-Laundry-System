@@ -50,7 +50,7 @@ const LoginPage = () => {
       toast.error(response.message);
     } else {
       response.result && setUser?.(response.result);
-      navigate('home/cash-register');
+      navigate('home/laundry-register');
     }
   };
 

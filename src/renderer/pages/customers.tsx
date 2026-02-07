@@ -7,12 +7,12 @@ import { toast } from 'react-toastify';
 import ConfirmationModal from 'renderer/components/common/modals/confirmation';
 import SetMobileNumberModal from 'renderer/components/mobileNumbers/setMobileNumberModal';
 import {
-  getMobileNumbers,
   deleteMobileNumber,
+  getCustomers,
 } from 'renderer/service/mobileNumbers';
 import { debounce } from 'renderer/utils/helper';
 
-function MobileNumbersPage() {
+function CustomersPage() {
   const [mobileNumbers, setMobileNumbers] = useState<MobileNumber[]>([]);
   const [mobileNumberModal, setMobileNumberModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -59,9 +59,10 @@ function MobileNumbersPage() {
   };
 
   const handleGetMobileNumbers = useCallback(async () => {
-    const response = await getMobileNumbers(searchText);
+    const response = await getCustomers(searchText);
     if (response.isSuccess) {
       const data = response.result;
+      console.log(data);
       const mns = data ?? [];
       setTotalPages(Math.ceil(mns.length / pageSize));
       setMobileNumbers(mns);
@@ -91,9 +92,7 @@ function MobileNumbersPage() {
         show={showConfirmationModal}
         toggle={setShowConfirmationModal}
         message={
-          <p className="text-center">
-            Are you sure to delete this Mobile Number?
-          </p>
+          <p className="text-center">Are you sure to delete this Customer?</p>
         }
         onConfirm={handleDeleteMobileNumber}
       />
@@ -103,12 +102,12 @@ function MobileNumbersPage() {
         selectedMobileNumber={selectedMobileNumber}
         onSuccess={handleSetMobileNumberSuccess}
       />
-      <h3>Mobile Numbers</h3>
+      <h3>Customers</h3>
       <Button
         className="mb-3 mt-1"
         onClick={() => handleSetMobileNumberModal()}
       >
-        Add Mobile Number
+        Add Customer
       </Button>
 
       <Card>
@@ -133,7 +132,7 @@ function MobileNumbersPage() {
             <tbody>
               {displayMobileNumbers.map((number) => (
                 <tr key={number.number}>
-                  <td>{number.number}</td>
+                  <td>{number.mobile}</td>
                   <td>{number.name}</td>
                   <td>
                     <FontAwesomeIcon
@@ -161,7 +160,7 @@ function MobileNumbersPage() {
           </Table>
           {mobileNumbers.length === 0 && (
             <span className="ms-2 fw-light fst-italic text-secondary">
-              no numbers
+              no customers
             </span>
           )}
         </Card.Body>
@@ -187,4 +186,4 @@ function MobileNumbersPage() {
   );
 }
 
-export default MobileNumbersPage;
+export default CustomersPage;

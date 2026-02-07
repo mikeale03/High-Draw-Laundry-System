@@ -24,8 +24,10 @@ import CategoriesPage from './pages/admin/categories';
 import TagsPage from './pages/admin/tags';
 import AccessCodesPage from './pages/admin/accessCodes';
 import MobileLoadPage from './pages/mobileLoad';
-import MobileNumbersPage from './pages/mobileNumbers';
 import GCashAccountsPage from './pages/admin/gcashAccounts';
+import CustomersPage from './pages/customers';
+import LaundryRegisterPage from './pages/laundryRegister';
+import LaundryEntriesPage from './pages/laundryEntries';
 
 export default function App() {
   const [user, setUser] = useState<User | undefined>();
@@ -65,6 +67,11 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LoginPage />} />
             <Route path="/home" element={<HomePage />}>
+              <Route
+                path="laundry-register"
+                element={<LaundryRegisterPage />}
+              />
+              <Route path="laundry-entries" element={<LaundryEntriesPage />} />
               <Route path="cash-register" element={<CashRegisterPage />} />
               <Route path="gcash-register" element={<GcashRegisterPage />} />
               <Route path="mobile-load" element={<MobileLoadPage />} />
@@ -74,7 +81,7 @@ export default function App() {
                 path="gcash-transactions"
                 element={<GcashTransactionsPage />}
               />
-              <Route path="mobile-numbers" element={<MobileNumbersPage />} />
+              <Route path="customers" element={<CustomersPage />} />
               <Route path="expenses" element={<ExpensesPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="activities" element={<ActivitiesPage />} />
