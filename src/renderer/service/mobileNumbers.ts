@@ -1,12 +1,12 @@
 import { Channels } from 'globalTypes/channels/mobileNumberChannels';
-import { MobileNumber } from 'globalTypes/realm/mobileNumber.types';
+import { Customer, MobileNumber } from 'globalTypes/realm/mobileNumber.types';
 import { Response } from 'globalTypes/realm/response.types';
 
 const {
   electron: { ipcRenderer },
 } = window;
 
-export const createMobileNumber = async (data: MobileNumber) => {
+export const createMobileNumber = async (data: Customer) => {
   const response = await ipcRenderer.invoke<Response<MobileNumber>>(
     Channels.create,
     data
@@ -16,7 +16,7 @@ export const createMobileNumber = async (data: MobileNumber) => {
 
 export const updateMobileNumber = async (
   currentNumber: string,
-  data: MobileNumber
+  data: Customer
 ) => {
   const response = await ipcRenderer.invoke<Response<MobileNumber>>(
     Channels.update,
@@ -29,6 +29,15 @@ export const updateMobileNumber = async (
 export const getMobileNumbers = async (searchText: string, limit?: number) => {
   const response = await ipcRenderer.invoke<Response<MobileNumber[]>>(
     Channels.getAll,
+    searchText,
+    limit
+  );
+  return response;
+};
+
+export const getCustomers = async (searchText: string, limit?: number) => {
+  const response = await ipcRenderer.invoke<Response<MobileNumber[]>>(
+    Channels.getCustomers,
     searchText,
     limit
   );

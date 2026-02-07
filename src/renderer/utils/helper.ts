@@ -112,3 +112,7 @@ export const toPascalCase = (str: string): string => {
 export const getGcashCharge = (amount: number) => {
   return Math.ceil(amount / 1000) * 10;
 };
+
+export const twoDecimals = (val: number) => {
+  return +val.toFixed(2)
+}

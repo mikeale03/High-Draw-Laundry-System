@@ -2,10 +2,12 @@ export type Product = {
   _id: string;
   name: string;
   barcode?: number;
-  barcodeStr: string;
+  barcodeStr?: string;
   description?: string;
   quantity: number;
   price: number;
+  category?: string;
+  tags?: string[];
   date_created: Date;
   date_updated?: Date;
   created_by: string;

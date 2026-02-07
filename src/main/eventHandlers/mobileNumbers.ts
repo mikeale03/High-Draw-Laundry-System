@@ -3,6 +3,7 @@ import { Channels } from '../../globalTypes/channels/mobileNumberChannels';
 import {
   createMobileNumber,
   deleteMobileNumber,
+  getCustomers,
   getMobileNumbers,
   updateMobileNumber,
 } from '../service/mobileNumbersRealm';
@@ -12,7 +13,7 @@ const setMobileNumbersEventHandler = (ipcMain: IpcMain) => {
     Channels.create,
     async (
       event: IpcMainInvokeEvent,
-      data: { number: string; name: string }
+      data: { mobile?: string; name: string }
     ) => {
       const result = await createMobileNumber(data);
       return result;
@@ -26,11 +27,18 @@ const setMobileNumbersEventHandler = (ipcMain: IpcMain) => {
     }
   );
   ipcMain.handle(
+    Channels.getCustomers,
+    async (event: IpcMainInvokeEvent, searchText: string, limit?: number) => {
+      const result = await getCustomers(searchText, limit);
+      return result;
+    }
+  );
+  ipcMain.handle(
     Channels.update,
     async (
       event: IpcMainInvokeEvent,
       currentNumber,
-      data: { number: string; name: string }
+      data: { mobile?: string; name: string }
     ) => {
       const result = await updateMobileNumber(currentNumber, data);
       return result;

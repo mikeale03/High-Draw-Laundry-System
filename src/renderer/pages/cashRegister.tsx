@@ -1,4 +1,4 @@
-import { faPenToSquare, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Product } from 'main/service/productsRealm';
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
@@ -96,12 +96,6 @@ function CashRegisterPage() {
     },
     [selectedProduct, handleSetItems]
   );
-
-  const handleDeleteItem = (key: keyof typeof items) => {
-    const newItems = { ...items };
-    delete newItems[items[key]._id];
-    setItems(newItems);
-  };
 
   useEffect(() => {
     productSelectRef.current?.focus();

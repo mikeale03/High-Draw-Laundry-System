@@ -41,7 +41,7 @@ function MobileNumberInput({ value, onChange, ...rest }: Props) {
 
   const handleSuggestionSelect = (suggestion: MobileNumber) => {
     inputRef.current?.focus();
-    onChange(suggestion.number);
+    onChange(suggestion.mobile!);
     setShowSuggestions(false);
   };
 
@@ -107,7 +107,7 @@ function MobileNumberInput({ value, onChange, ...rest }: Props) {
                 !isInputFocusRef.current && setShowSuggestions(false);
               }}
             >
-              {`${suggestion.number} - ${suggestion.name}`}
+              {`${suggestion.mobile} - ${suggestion.name}`}
             </li>
           ))}
         </ul>
