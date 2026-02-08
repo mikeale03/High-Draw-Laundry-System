@@ -13,6 +13,7 @@ type Props = {
   customer: string;
   payment: 'paid' | 'unpaid';
   paymentAmount: number;
+  onConfirm: (mode: 'paid' | 'unpaid' | 'gcash') => void;
   // onCancel?: () => void;
   // onSuccess?: () => void;
   // onExited?: () => void;
@@ -29,6 +30,7 @@ const SubmitConfirmationModal = ({
   service,
   payment,
   paymentAmount,
+  onConfirm,
 }: Props) => {
   const [showGcashConfirmation, setShowGcashConfirmation] = useState(false);
 
@@ -44,10 +46,6 @@ const SubmitConfirmationModal = ({
     setShowGcashConfirmation(true);
   };
 
-  const handleCashPayment = () => {};
-
-  const handleGcashPayment = () => {};
-
   const message = (
     <p className="text-center">
       Are you sure to pay with{' '}
@@ -61,7 +59,7 @@ const SubmitConfirmationModal = ({
       <ConfirmationModal
         show={showGcashConfirmation}
         toggle={setShowGcashConfirmation}
-        onConfirm={handleGcashPayment}
+        onConfirm={() => onConfirm('gcash')}
         onCancel={() => toggle(true)}
         message={message}
       />
@@ -167,7 +165,7 @@ const SubmitConfirmationModal = ({
             </Button>
             <Button
               variant="primary"
-              onClick={() => handleCashPayment()}
+              onClick={() => onConfirm(payment)}
               tabIndex={0}
             >
               Confirm

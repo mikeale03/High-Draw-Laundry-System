@@ -1,3 +1,4 @@
+import { MobileNumber } from 'globalTypes/realm/mobileNumber.types';
 import { ActionMeta, SingleValue } from 'react-select';
 import AsyncSelect from 'react-select/async';
 import { getCustomers } from 'renderer/service/mobileNumbers';
@@ -6,8 +7,9 @@ const handleGetCustomers = async (inputValue: string) => {
   const { isSuccess, result } = await getCustomers(inputValue, 20);
   if (isSuccess && result) {
     return result.map((i) => ({
-      label: i.name,
+      label: `${i.name} ${i.mobile && `- cell#: ${i.mobile}`}`,
       value: i.number,
+      customer: i,
     }));
   }
   return [];
@@ -15,7 +17,9 @@ const handleGetCustomers = async (inputValue: string) => {
 
 const loadOptions = (
   inputValue: string,
-  callback: (options: { label: string; value: string }[]) => void
+  callback: (
+    options: { label: string; value: string; customer: MobileNumber }[]
+  ) => void
 ) => {
   handleGetCustomers(inputValue)
     // eslint-disable-next-line promise/no-callback-in-promise
@@ -23,16 +27,20 @@ const loadOptions = (
     .catch((err) => console.error(err));
 };
 
+export type CustomerSelectOption = SingleValue<{
+  label: string;
+  value: string;
+  customer: MobileNumber;
+}>;
+
 type Props = {
   onSelect:
     | ((
-        newValue: SingleValue<{
-          label: string;
-          value: string;
-        }>,
+        newValue: CustomerSelectOption,
         actionMeta: ActionMeta<{
           label: string;
           value: string;
+          customer: MobileNumber;
         }>
       ) => void)
     | undefined;

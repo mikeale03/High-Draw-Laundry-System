@@ -8,6 +8,7 @@ import { Product } from 'globalTypes/realm/products.types';
 import {
   FormEvent,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -24,12 +25,17 @@ import {
   Row,
   Form,
 } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 import ProductsSelect from 'renderer/components/cashRegister/productsSelect';
 import QuantityInputModal from 'renderer/components/cashRegister/quantityInputModal';
-import CustomerSelect from 'renderer/components/common/selects/customerSelect';
+import CustomerSelect, {
+  CustomerSelectOption,
+} from 'renderer/components/common/selects/customerSelect';
 import AddOnItemsTable from 'renderer/components/laundryRegister/addOnItemsTable';
 import PaymentCard from 'renderer/components/laundryRegister/paymentCard';
 import SubmitConfirmationModal from 'renderer/components/laundryRegister/submitConfirmationModal';
+import UserContext from 'renderer/context/userContext';
+import { createLaundry } from 'renderer/service/laundry';
 import { laundryServicePriceRecord } from 'renderer/utils/constants';
 import { twoDecimals } from 'renderer/utils/helper';
 
@@ -56,9 +62,11 @@ const LaundryRegisterPage = () => {
   const [selectedItem, setSelectedItem] = useState<Product | undefined>(); // add on item to edit
   const [lastUpdatedId, setLastUpdatedId] = useState('');
   const [customer, setCustomer] = useState('');
+  const [customerNumber, setCustomerNumber] = useState('');
   const [payment, setPayment] = useState<'unpaid' | 'paid'>('paid');
   const [paymentAmount, setPaymentAmount] = useState(0);
   const dropOffOptionRef = useRef<HTMLDivElement>(null);
+  const { user } = useContext(UserContext);
 
   const itemsKeys = Object.keys(addOnItems);
   const addOnsQty = itemsKeys.length;
@@ -148,10 +156,39 @@ const LaundryRegisterPage = () => {
     setAddOnItems(newItems);
   };
 
+  const handleCustomerSelect = (opt: CustomerSelectOption) => {
+    if (opt) {
+      const { name, mobile } = opt.customer;
+      setCustomer(name);
+      mobile && setCustomerNumber(mobile);
+    }
+  };
+
   const handleSubmitForm = (e: FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setShowSubmitConfirmation(true);
+  };
+
+  const handleConfirm = async (mode: 'paid' | 'unpaid' | 'gcash') => {
+    if (!user) return;
+    const { isSuccess, message } = await createLaundry({
+      service,
+      customer,
+      customerNumber,
+      loads: loads.map((v) => +v.value),
+      addOns: addOnsQty,
+      isPaid: mode !== 'unpaid',
+      amount: subTotal,
+      dropOffDate: new Date(),
+      transactBy: user.username,
+      transactById: user._id,
+    });
+    if (!isSuccess) {
+      toast.error(message);
+      return;
+    }
+    toast.success(message);
   };
 
   useEffect(() => {
@@ -177,6 +214,7 @@ const LaundryRegisterPage = () => {
         service={service}
         payment={payment}
         paymentAmount={paymentAmount}
+        onConfirm={handleConfirm}
       />
 
       <h3>Laundry Register</h3>
@@ -253,9 +291,7 @@ const LaundryRegisterPage = () => {
             <div className="mt-3 me-3">
               <FormGroup>
                 <FormLabel className="fw-bold">Customer</FormLabel>
-                <CustomerSelect
-                  onSelect={(opt) => setCustomer(opt?.label ?? '')}
-                />
+                <CustomerSelect onSelect={handleCustomerSelect} />
               </FormGroup>
             </div>
 
