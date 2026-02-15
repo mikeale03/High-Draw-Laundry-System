@@ -34,6 +34,7 @@ export type CustomerSelectOption = SingleValue<{
 }>;
 
 type Props = {
+  value: CustomerSelectOption | null;
   onSelect:
     | ((
         newValue: CustomerSelectOption,
@@ -46,13 +47,14 @@ type Props = {
     | undefined;
 };
 
-const CustomerSelect = ({ onSelect }: Props) => {
+const CustomerSelect = ({ value, onSelect }: Props) => {
   return (
     <AsyncSelect
       name="customer"
       cacheOptions
       loadOptions={loadOptions}
       defaultOptions
+      value={value}
       onChange={onSelect}
       required
     />

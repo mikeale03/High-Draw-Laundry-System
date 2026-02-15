@@ -26,6 +26,7 @@ import {
   Form,
 } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import { v4 as uuid } from 'uuid';
 import ProductsSelect from 'renderer/components/cashRegister/productsSelect';
 import QuantityInputModal from 'renderer/components/cashRegister/quantityInputModal';
 import CustomerSelect, {
@@ -62,23 +63,38 @@ const LaundryRegisterPage = () => {
   const [selectedItem, setSelectedItem] = useState<Product | undefined>(); // add on item to edit
   const [lastUpdatedId, setLastUpdatedId] = useState('');
   const [customer, setCustomer] = useState('');
+  const [customerSelectValue, setCustomerSelectValue] =
+    useState<CustomerSelectOption | null>(null);
   const [customerNumber, setCustomerNumber] = useState('');
-  const [payment, setPayment] = useState<'unpaid' | 'paid'>('paid');
-  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [isPaid, setIsPaid] = useState(true);
+  // const [payment, setPayment] = useState<'cash' | 'gcash'>('cash');
+  const [paymentAmount, setPaymentAmount] = useState('');
   const dropOffOptionRef = useRef<HTMLDivElement>(null);
   const { user } = useContext(UserContext);
 
   const itemsKeys = Object.keys(addOnItems);
   const addOnsQty = itemsKeys.length;
+  const servicePrice = laundryServicePriceRecord[service];
+  const totalServicePrice = twoDecimals(loads.length * servicePrice);
 
-  const subTotal = useMemo(() => {
+  const addOnsPrice = useMemo(() => {
     let t = 0;
     itemsKeys.forEach((k) => {
       t += addOnItems[k].totalPrice;
     });
-    const servicePrice = laundryServicePriceRecord[service] * loads.length;
-    return twoDecimals(t + servicePrice);
-  }, [itemsKeys, addOnItems, service, loads.length]);
+    return twoDecimals(t);
+  }, [itemsKeys, addOnItems]);
+
+  const subTotal = twoDecimals(addOnsPrice + totalServicePrice);
+
+  // const subTotal = useMemo(() => {
+  //   let t = 0;
+  //   itemsKeys.forEach((k) => {
+  //     t += addOnItems[k].totalPrice;
+  //   });
+  //   const totalServicePrice = servicePrice * loads.length;
+  //   return twoDecimals(t + servicePrice);
+  // }, [itemsKeys, addOnItems, servicePrice, loads.length]);
 
   const handleAddLoad = () => {
     setLoads([...loads, { key: ++keyCtr, value: '' }]);
@@ -157,6 +173,7 @@ const LaundryRegisterPage = () => {
   };
 
   const handleCustomerSelect = (opt: CustomerSelectOption) => {
+    setCustomerSelectValue(opt);
     if (opt) {
       const { name, mobile } = opt.customer;
       setCustomer(name);
@@ -170,25 +187,43 @@ const LaundryRegisterPage = () => {
     setShowSubmitConfirmation(true);
   };
 
-  const handleConfirm = async (mode: 'paid' | 'unpaid' | 'gcash') => {
+  const handleConfirm = async (payment: 'cash' | 'gcash') => {
     if (!user) return;
     const { isSuccess, message } = await createLaundry({
       service,
+      servicePrice,
       customer,
       customerNumber,
       loads: loads.map((v) => +v.value),
-      addOns: addOnsQty,
-      isPaid: mode !== 'unpaid',
-      amount: subTotal,
+      addOns: Object.values(addOnItems).map((v) => ({
+        productId: v._id,
+        productName: v.name,
+        quantity: v.quantity,
+        price: v.price,
+        totalPrice: v.totalPrice,
+      })),
+      addOnsPrice,
+      isPaid,
+      payment: isPaid ? payment : undefined,
+      totalAmount: subTotal,
       dropOffDate: new Date(),
       transactBy: user.username,
       transactById: user._id,
+      transactionId: uuid(),
     });
+
     if (!isSuccess) {
       toast.error(message);
       return;
     }
     toast.success(message);
+    setShowSubmitConfirmation(false);
+    setLoads([{ key: 1, value: '' }]);
+    setCustomer('');
+    setCustomerSelectValue(null);
+    setAddOnItems({});
+    setPaymentAmount('');
+    setIsPaid(true);
   };
 
   useEffect(() => {
@@ -212,8 +247,8 @@ const LaundryRegisterPage = () => {
         addOnsQty={addOnsQty}
         customer={customer}
         service={service}
-        payment={payment}
-        paymentAmount={paymentAmount}
+        isPaid={isPaid}
+        paymentAmount={+paymentAmount}
         onConfirm={handleConfirm}
       />
 
@@ -291,7 +326,10 @@ const LaundryRegisterPage = () => {
             <div className="mt-3 me-3">
               <FormGroup>
                 <FormLabel className="fw-bold">Customer</FormLabel>
-                <CustomerSelect onSelect={handleCustomerSelect} />
+                <CustomerSelect
+                  value={customerSelectValue}
+                  onSelect={handleCustomerSelect}
+                />
               </FormGroup>
             </div>
 
@@ -315,19 +353,21 @@ const LaundryRegisterPage = () => {
                       label="On Drop-off"
                       name="group1"
                       type="radio"
-                      checked={payment === 'paid'}
-                      onChange={(e) =>
-                        setPayment(e.target.checked ? 'paid' : 'unpaid')
-                      }
+                      checked={isPaid}
+                      onChange={(e) => {
+                        setIsPaid(e.target.checked);
+                        setPaymentAmount('');
+                      }}
                     />
                     <FormCheck
                       label="On Claim"
                       name="group1"
                       type="radio"
-                      checked={payment === 'unpaid'}
-                      onChange={(e) =>
-                        setPayment(e.target.checked ? 'unpaid' : 'paid')
-                      }
+                      checked={!isPaid}
+                      onChange={(e) => {
+                        setIsPaid(!e.target.checked);
+                        setPaymentAmount('');
+                      }}
                     />
                   </div>
                 </FormGroup>
@@ -352,8 +392,9 @@ const LaundryRegisterPage = () => {
               subTotal={subTotal}
               service={service}
               customer={customer}
-              payment={payment}
-              onPaymentAmountChange={(amount) => setPaymentAmount(amount)}
+              isPaid={isPaid}
+              paymentAmount={paymentAmount}
+              setPaymentAmount={setPaymentAmount}
             />
           </Col>
         </Row>

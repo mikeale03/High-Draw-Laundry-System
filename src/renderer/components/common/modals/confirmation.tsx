@@ -8,7 +8,7 @@ export type Props = {
   onConfirm?: () => void;
   onCancel?: () => void;
   onExited?: () => void;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'lg' | 'xl';
   cancelLabel?: string;
   confirmLabel?: string;
 };

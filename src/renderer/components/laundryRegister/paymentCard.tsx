@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unstable-nested-components */
-import { useEffect, useState, memo, ChangeEvent } from 'react';
+import { memo, ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { Button, Card, Col, Form, Row } from 'react-bootstrap';
 import { pesoFormat } from 'renderer/utils/helper';
 
@@ -9,8 +9,9 @@ type Props = {
   addOnsQty: number;
   service: 'drop-off' | 'self-service';
   customer: string;
-  payment: 'paid' | 'unpaid';
-  onPaymentAmountChange: (amount: number) => void;
+  isPaid: boolean;
+  paymentAmount: string;
+  setPaymentAmount: Dispatch<SetStateAction<string>>;
 };
 
 const PaymentCard = ({
@@ -19,20 +20,15 @@ const PaymentCard = ({
   subTotal,
   service,
   customer,
-  payment,
+  isPaid,
   // addOnsQty,
-  onPaymentAmountChange,
+  paymentAmount,
+  setPaymentAmount,
 }: Props) => {
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const paymentDisplay = payment === 'paid' ? 'On Drop-Off' : 'On Claim';
-
-  useEffect(() => {
-    setPaymentAmount('');
-  }, [payment]);
+  const paymentDisplay = isPaid ? 'On Drop-Off' : 'On Claim';
 
   const handlePaymentChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPaymentAmount(e.target.value);
-    onPaymentAmountChange(+e.target.value);
   };
 
   return (
@@ -70,7 +66,7 @@ const PaymentCard = ({
               <strong>{pesoFormat(subTotal)}</strong>
             </p>
           </Col>
-          {payment === 'paid' && (
+          {isPaid && (
             <>
               <Col xs="6">payment amount:</Col>
               <Col xs="6">
@@ -87,7 +83,7 @@ const PaymentCard = ({
               </p>
             </Col> */}
         </Row>
-        {payment === 'paid' && (
+        {isPaid && (
           <Form.Group className="mb-3">
             <Form.Label className="d-block fw-bold text-center">
               Payment Amount

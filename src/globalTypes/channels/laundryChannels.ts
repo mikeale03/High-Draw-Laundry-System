@@ -3,6 +3,7 @@ export const LaundryChannels = {
   update: 'laundries:update',
   delete: 'laundries:delete',
   get: 'laundries:get',
+  claim: 'laundries:claim',
 } as const;
 
 export type LaundryChannels =

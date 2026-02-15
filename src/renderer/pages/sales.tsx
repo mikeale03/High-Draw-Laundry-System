@@ -296,7 +296,12 @@ const SalesPage = () => {
                 <tbody>
                   {sales.map((d) => (
                     <tr key={d._id}>
-                      <td className="text-capitalize">{d.product_name}</td>
+                      <td className="text-capitalize">
+                        {d.product_name}{' '}
+                        <span className="text-primary">
+                          {d.product_id === 'laundry-add-on' ? '(Add-On)' : ''}
+                        </span>
+                      </td>
                       <td>{d.quantity.toLocaleString()}</td>
                       <td>{d.product_category}</td>
                       <td>
@@ -326,30 +331,34 @@ const SalesPage = () => {
                       {!isGroupByProduct && <td>{d.transact_by}</td>}
 
                       <td className="print-hide">
-                        {d.product_id !== 'mobile-load' && (
-                          <FontAwesomeIcon
-                            onClick={() => handleShowConfirmationModal(d, true)}
-                            icon={faXmark}
-                            title="Void Sale"
-                            size="xl"
-                            className="me-2 cursor-pointer"
-                            role="button"
-                            tabIndex={0}
-                          />
-                        )}
-                        {user?.role === 'admin' &&
+                        {d.saleSource !== 'laundry' &&
                           d.product_id !== 'mobile-load' && (
-                            <FontAwesomeIcon
-                              onClick={() =>
-                                handleShowConfirmationModal(d, false)
-                              }
-                              icon={faTrashCan}
-                              title="Delete"
-                              size="xl"
-                              className="me-2 cursor-pointer"
-                              role="button"
-                              tabIndex={0}
-                            />
+                            <>
+                              <FontAwesomeIcon
+                                onClick={() =>
+                                  handleShowConfirmationModal(d, true)
+                                }
+                                icon={faXmark}
+                                title="Void Sale"
+                                size="xl"
+                                className="me-2 cursor-pointer"
+                                role="button"
+                                tabIndex={0}
+                              />
+                              {user?.role === 'admin' && (
+                                <FontAwesomeIcon
+                                  onClick={() =>
+                                    handleShowConfirmationModal(d, false)
+                                  }
+                                  icon={faTrashCan}
+                                  title="Delete"
+                                  size="xl"
+                                  className="me-2 cursor-pointer"
+                                  role="button"
+                                  tabIndex={0}
+                                />
+                              )}
+                            </>
                           )}
                       </td>
                     </tr>
