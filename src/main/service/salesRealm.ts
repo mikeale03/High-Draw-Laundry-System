@@ -5,7 +5,7 @@ import { openProductsRealm, Product } from './productsRealm';
 import { Gcash } from '../../globalTypes/realm/gcash.types';
 
 const PRODUCTS = 'Products';
-const SALES = 'Sales';
+export const SALES = 'Sales';
 
 export type Sales = {
   _id: string;
@@ -23,6 +23,7 @@ export type Sales = {
   transaction_id: string;
   remaining_quantity?: number;
   isVoid?: boolean;
+  saleSource?: 'laundry';
 };
 
 export class SalesSchema extends Realm.Object {
@@ -43,6 +44,7 @@ export class SalesSchema extends Realm.Object {
       transact_by_user_id: { type: 'string', indexed: true },
       transaction_id: { type: 'string', indexed: true },
       isVoid: 'bool?',
+      saleSource: 'string?'
     },
     primaryKey: '_id',
   };
@@ -52,7 +54,7 @@ export const openSalesRealm = async () => {
   const sales = await Realm.open({
     path: '../realm/sales',
     schema: [SalesSchema],
-    schemaVersion: 6,
+    schemaVersion: 7,
   });
   return sales;
 };
@@ -68,6 +70,7 @@ export const createSales = async (
       realm.create<Sales>(SALES, sale);
     });
   });
+  return realm;
 };
 
 export const salesPurchase = async (

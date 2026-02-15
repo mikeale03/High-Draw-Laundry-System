@@ -11,10 +11,10 @@ type Props = {
   addOnsQty: number;
   service: 'drop-off' | 'self-service';
   customer: string;
-  payment: 'paid' | 'unpaid';
+  isPaid: boolean;
   paymentAmount: number;
-  onConfirm: (mode: 'paid' | 'unpaid' | 'gcash') => void;
-  // onCancel?: () => void;
+  onConfirm: (payment: 'cash' | 'gcash') => void;
+  onCancel?: () => void;
   // onSuccess?: () => void;
   // onExited?: () => void;
   // onError?: () => void;
@@ -28,9 +28,10 @@ const SubmitConfirmationModal = ({
   addOnsQty,
   customer,
   service,
-  payment,
+  isPaid,
   paymentAmount,
   onConfirm,
+  onCancel,
 }: Props) => {
   const [showGcashConfirmation, setShowGcashConfirmation] = useState(false);
 
@@ -39,11 +40,16 @@ const SubmitConfirmationModal = ({
   };
 
   const change = paymentAmount - subTotal;
-  const paymentDisplay = payment === 'paid' ? 'On Drop-Off' : 'On Claim';
+  const paymentDisplay = isPaid ? 'On Drop-Off' : 'On Claim';
 
   const handleShowGcashConfirmation = () => {
     onHide();
     setShowGcashConfirmation(true);
+  };
+
+  const handleCancel = () => {
+    onCancel && onCancel();
+    onHide();
   };
 
   const message = (
@@ -124,7 +130,7 @@ const SubmitConfirmationModal = ({
                 <strong>{pesoFormat(subTotal)}</strong>
               </p>
             </Col>
-            {payment === 'paid' && (
+            {isPaid && (
               <>
                 <Col xs="6" className="fs-5">
                   payment amount:
@@ -148,7 +154,7 @@ const SubmitConfirmationModal = ({
         </Modal.Body>
         <Modal.Footer className="d-flex justify-content-between">
           <div>
-            {payment === 'paid' && (
+            {isPaid && (
               <Button
                 variant="outline-primary me-2"
                 size="sm"
@@ -160,12 +166,12 @@ const SubmitConfirmationModal = ({
           </div>
 
           <div>
-            <Button variant="secondary" onClick={onHide} className="me-2">
+            <Button variant="secondary" onClick={handleCancel} className="me-2">
               Cancel
             </Button>
             <Button
               variant="primary"
-              onClick={() => onConfirm(payment)}
+              onClick={() => onConfirm('cash')}
               tabIndex={0}
             >
               Confirm

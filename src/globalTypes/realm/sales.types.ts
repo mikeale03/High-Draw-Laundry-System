@@ -14,6 +14,7 @@ export type Sales = {
   transaction_id: string;
   remaining_quantity?: number;
   isVoid?: boolean;
+  saleSource?: 'laundry';
 };
 
 export type Items = Record<

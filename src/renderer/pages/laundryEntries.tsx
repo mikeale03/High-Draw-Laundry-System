@@ -1,4 +1,5 @@
-import { faPenToSquare, faTrashCan } from '@fortawesome/free-regular-svg-icons';
+/* eslint-disable react/no-array-index-key */
+import { faTrashCan } from '@fortawesome/free-regular-svg-icons';
 import { faPersonWalkingLuggage } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { format } from 'date-fns';
@@ -17,18 +18,24 @@ import {
   Table,
 } from 'react-bootstrap';
 import ReactDatePicker from 'react-datepicker';
+import LaundryEntriesConfirmationModal from 'renderer/components/laundryEntries/laundryEntriesConfirmation';
 import { getLaundries } from 'renderer/service/laundry';
 import { debounce, pesoFormat } from 'renderer/utils/helper';
 
 const LaundryEntriesPage = () => {
   const [laundries, setLaundries] = useState<Laundry[]>([]);
+  const [confirmationModal, setConfirmationModal] = useState(false);
+  const [confimationAction, setConfimationAction] = useState<
+    'delete' | 'claim'
+  >('delete');
+  const [selectedLaundry, setSelectedLaundry] = useState<Laundry | undefined>();
   const [filter, setFilter] = useState<LaundryPaginatedGetFilter>({
     pageNumber: 1,
     pageSize: 50,
     customer: '',
     service: '',
     dropOffDate: undefined,
-    claimDate: undefined,
+    claimedDate: undefined,
     isPaid: '',
     isClaimed: '',
   });
@@ -49,12 +56,46 @@ const LaundryEntriesPage = () => {
     handleFilterChange({ customer: e.target.value.trim() });
   }, 500);
 
+  const handleConfirm = (laundry?: Laundry) => {
+    if (!selectedLaundry) return;
+    setConfirmationModal(false);
+    if (confimationAction === 'claim' && laundry) {
+      setLaundries(
+        laundries.map((item) => (item._id === laundry._id ? laundry : item))
+      );
+    } else if (confimationAction === 'delete') {
+      setLaundries(
+        laundries.filter((item) => item._id !== selectedLaundry._id)
+      );
+    }
+  };
+
+  const handleClaimConfirmation = (laundry: Laundry) => {
+    setConfirmationModal(true);
+    setConfimationAction('claim');
+    setSelectedLaundry(laundry);
+  };
+
+  const handleDeleteConfirmation = (laundry: Laundry) => {
+    setConfirmationModal(true);
+    setConfimationAction('delete');
+    setSelectedLaundry(laundry);
+  };
+
   useEffect(() => {
     handleGetLaundries();
   }, [handleGetLaundries]);
 
   return (
     <div>
+      <LaundryEntriesConfirmationModal
+        show={confirmationModal}
+        toggle={setConfirmationModal}
+        selectedLaundry={selectedLaundry}
+        action={confimationAction}
+        onConfirm={handleConfirm}
+      />
+
       <h3>Laundry Entries</h3>
       <Row className="mb-3">
         <Col lg="2">
@@ -81,8 +122,8 @@ const LaundryEntriesPage = () => {
           <FormLabel>Claimed Date</FormLabel>
           <ReactDatePicker
             className="form-control"
-            selected={filter.claimDate}
-            onChange={(claimDate) => handleFilterChange({ claimDate })}
+            selected={filter.claimedDate}
+            onChange={(claimedDate) => handleFilterChange({ claimedDate })}
             isClearable
           />
         </Col>
@@ -120,14 +161,17 @@ const LaundryEntriesPage = () => {
               />
             </Col>
           </Row>
-          <Table>
+          <Table responsive>
             <thead>
               <tr>
                 <th>Customer</th>
                 <th>Service</th>
+                <th>Service Price</th>
                 <th>Loads</th>
+                <th>Add-Ons</th>
+                <th>Add-Ons Price</th>
                 <th>Drop-Off Date</th>
-                <th>Amount</th>
+                <th>Total Amount</th>
                 <th>Paid</th>
                 <th>Claimed Date</th>
                 <th>Claimed By</th>
@@ -137,28 +181,37 @@ const LaundryEntriesPage = () => {
             </thead>
             <tbody>
               {laundries.map((item) => (
-                <tr>
-                  <td>{item.customer}</td>
+                <tr key={item._id}>
+                  <td title={item.customerNumber}>{item.customer}</td>
                   <td>{item.service}</td>
+                  <td>{item.servicePrice}</td>
                   <td>{item.loads.map((v) => `${v} kg`).join(', ')}</td>
-                  <td>{format(item.dropOffDate, 'MM/dd/yyyy HH:mm')}</td>
-                  <td>{pesoFormat(item.amount)}</td>
+                  <td>
+                    {item.addOns.map((v, i) => (
+                      <p key={`${i}`} className="mb-0">{`${v.quantity} ${
+                        v.productName
+                      } ${pesoFormat(v.price * v.quantity)}`}</p>
+                    ))}
+                  </td>
+                  <td>{pesoFormat(item.addOnsPrice)}</td>
+                  <td>{format(item.dropOffDate, 'MM/dd/yyyy hh:mm')}</td>
+                  <td>{pesoFormat(item.totalAmount)}</td>
                   <td>{item.isPaid ? 'Yes' : 'No'}</td>
                   <td>
-                    {item.claimDate &&
-                      format(item.claimDate, 'MM-dd-yyyy HH:mm')}
+                    {item.claimedDate &&
+                      format(item.claimedDate, 'MM-dd-yyyy hh:mm')}
                   </td>
                   <td>{item.claimedBy}</td>
                   <td>{item.transactBy}</td>
                   <td>
-                    <FontAwesomeIcon
+                    {/* <FontAwesomeIcon
                       icon={faPenToSquare}
                       title="Edit"
                       size="xl"
                       className="me-2 cursor-pointer"
                       role="button"
                       tabIndex={0}
-                    />
+                    /> */}
                     <FontAwesomeIcon
                       icon={faTrashCan}
                       title="Delete"
@@ -166,15 +219,19 @@ const LaundryEntriesPage = () => {
                       className="me-2 cursor-pointer"
                       role="button"
                       tabIndex={0}
+                      onClick={() => handleDeleteConfirmation(item)}
                     />
-                    <FontAwesomeIcon
-                      icon={faPersonWalkingLuggage}
-                      title="Claim"
-                      size="xl"
-                      className="me-2 cursor-pointer"
-                      role="button"
-                      tabIndex={0}
-                    />
+                    {!item.claimedDate && (
+                      <FontAwesomeIcon
+                        icon={faPersonWalkingLuggage}
+                        title="Claim"
+                        size="xl"
+                        className="me-2 cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleClaimConfirmation(item)}
+                      />
+                    )}
                   </td>
                 </tr>
               ))}
