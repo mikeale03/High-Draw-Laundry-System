@@ -52,6 +52,9 @@ const LaundryRegisterPage = () => {
   const [service, setService] = useState<
     'drop-off' | 'wash and dry' | 'wash only'
   >('drop-off');
+  const [selfServiceType, setSelfServiceType] = useState<
+    'wash and dry' | 'wash only'
+  >('wash and dry');
   const [productSelectInputValue, setProductSelectInputValue] = useState('');
   const [showInputQuantityModal, setShowInputQuantityModal] = useState(false);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
@@ -86,15 +89,6 @@ const LaundryRegisterPage = () => {
   }, [itemsKeys, addOnItems]);
 
   const subTotal = twoDecimals(addOnsPrice + totalServicePrice);
-
-  // const subTotal = useMemo(() => {
-  //   let t = 0;
-  //   itemsKeys.forEach((k) => {
-  //     t += addOnItems[k].totalPrice;
-  //   });
-  //   const totalServicePrice = servicePrice * loads.length;
-  //   return twoDecimals(t + servicePrice);
-  // }, [itemsKeys, addOnItems, servicePrice, loads.length]);
 
   const handleAddLoad = () => {
     setLoads([...loads, { key: ++keyCtr, value: '' }]);
@@ -187,6 +181,19 @@ const LaundryRegisterPage = () => {
     setShowSubmitConfirmation(true);
   };
 
+  const handleSelectSelfService = () => {
+    setService(selfServiceType);
+    setIsPaid(true);
+    setPaymentAmount('');
+  };
+
+  const handleSelectSelfServiceOption = (
+    option: 'wash and dry' | 'wash only'
+  ) => {
+    setSelfServiceType(option);
+    setService(option);
+  };
+
   const handleConfirm = async (payment: 'cash' | 'gcash') => {
     if (!user) return;
     const { isSuccess, message } = await createLaundry({
@@ -274,11 +281,28 @@ const LaundryRegisterPage = () => {
                 <h5 className="m-0">DROP-OFF</h5>
               </div>
               <div
+                className={`cursor-pointer rounded-4 bg-white me-3 py-2 px-5 transition-all
+              ${
+                service !== 'drop-off' ? 'border border-primary' : 'text-muted'
+              }`}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSelectSelfService();
+                  }
+                }}
+                style={{ width: '250px' }}
+                onClick={handleSelectSelfService}
+              >
+                <p className="m-0">
+                  P{laundryServicePriceRecord[selfServiceType]}
+                </p>
+                <h5 className="m-0">SELF-SERVICE</h5>
+              </div>
+              {/* <div
                 className={`cursor-pointer rounded-4 bg-white me-3 py-2 px-5  transition-all
               ${
-                service === 'wash and dry'
-                  ? 'border border-primary'
-                  : 'text-muted'
+                service !== 'drop-off' ? 'border border-primary' : 'text-muted'
               }`}
                 tabIndex={0}
                 onKeyDown={(e) =>
@@ -314,7 +338,7 @@ const LaundryRegisterPage = () => {
                   <span style={{ fontSize: '11px' }}>SELF-SERVICE</span>
                 </p>
                 <h5>WASH ONLY</h5>
-              </div>
+              </div> */}
             </div>
 
             {loads.map((v, i) => (
@@ -368,33 +392,59 @@ const LaundryRegisterPage = () => {
                 </FormGroup>
               </Col>
               <Col lg="4">
-                <FormGroup>
-                  <FormLabel className="fw-bold">Payment</FormLabel>
-                  <div className="d-flex p-2">
-                    <FormCheck
-                      className="me-3"
-                      label="On Drop-off"
-                      name="group1"
-                      type="radio"
-                      checked={isPaid}
-                      onChange={(e) => {
-                        setIsPaid(e.target.checked);
-                        setPaymentAmount('');
-                      }}
-                      disabled={service !== 'drop-off'}
-                    />
-                    <FormCheck
-                      label="On Claim"
-                      name="group1"
-                      type="radio"
-                      checked={!isPaid}
-                      onChange={(e) => {
-                        setIsPaid(!e.target.checked);
-                        setPaymentAmount('');
-                      }}
-                    />
-                  </div>
-                </FormGroup>
+                {service === 'drop-off' ? (
+                  <FormGroup>
+                    <FormLabel className="fw-bold">Payment</FormLabel>
+                    <div className="d-flex p-2">
+                      <FormCheck
+                        className="me-3"
+                        label="On Drop-off"
+                        name="group1"
+                        type="radio"
+                        checked={isPaid}
+                        onChange={(e) => {
+                          setIsPaid(e.target.checked);
+                          setPaymentAmount('');
+                        }}
+                      />
+                      <FormCheck
+                        label="On Claim"
+                        name="group1"
+                        type="radio"
+                        checked={!isPaid}
+                        onChange={(e) => {
+                          setIsPaid(!e.target.checked);
+                          setPaymentAmount('');
+                        }}
+                      />
+                    </div>
+                  </FormGroup>
+                ) : (
+                  <FormGroup>
+                    <FormLabel className="fw-bold">
+                      Self-Service Option
+                    </FormLabel>
+                    <div className="d-flex p-2">
+                      <FormCheck
+                        className="me-3"
+                        label="Wash And Dry"
+                        type="radio"
+                        checked={service === 'wash and dry'}
+                        onClick={() =>
+                          handleSelectSelfServiceOption('wash and dry')
+                        }
+                      />
+                      <FormCheck
+                        label="Wash Only"
+                        type="radio"
+                        checked={service === 'wash only'}
+                        onClick={() =>
+                          handleSelectSelfServiceOption('wash only')
+                        }
+                      />
+                    </div>
+                  </FormGroup>
+                )}
               </Col>
             </Row>
             <Card style={{ minHeight: '200px' }}>
