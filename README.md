@@ -1,9 +1,10 @@
-# Sales-and-Inventory-System
+# Laundry-Sales-and-Inventory-System
 
 *An offline desktop app for managing sales and inventory. Built with [Electron](https://github.com/atom/electron), React, Typescript and [Realm](https://github.com/realm) as offline database.*
 
 ## Features
 
+- Manage Laundry
 - View, create, update and delete products.
 - Purchase products through cash register.
 - Can use barcode scanner for quick item search.
