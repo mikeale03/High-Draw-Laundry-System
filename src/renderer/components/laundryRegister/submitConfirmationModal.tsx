@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Col, Modal, Row } from 'react-bootstrap';
 import { pesoFormat } from 'renderer/utils/helper';
+import { Laundry } from 'globalTypes/realm/laundry.types';
 import ConfirmationModal from '../common/modals/confirmation';
 
 type Props = {
@@ -9,7 +10,7 @@ type Props = {
   loadQty: number;
   subTotal: number;
   addOnsQty: number;
-  service: 'drop-off' | 'self-service';
+  service: Laundry['service'];
   customer: string;
   isPaid: boolean;
   paymentAmount: number;

@@ -8,7 +8,7 @@ export type AddOn = {
 
 export type Laundry = {
   _id: string;
-  service: 'drop-off' | 'self-service';
+  service: 'drop-off' | 'wash and dry' | 'wash only';
   servicePrice: number;
   customer: string;
   loads: number[];
@@ -35,6 +35,17 @@ export type LaundryClaimData = {
   claimedBy: string;
   claimedById: string;
 }
+
+export type LaundryGetFilter = {
+  customer: string;
+  service: string;
+  dropOffDate?: Date | null;
+  claimedDate?: Date | null;
+  isPaid: string;
+  isClaimed: string;
+  limit?: number;
+}
+
 
 export type LaundryPaginatedGetFilter = {
   pageNumber: number;

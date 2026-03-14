@@ -9,6 +9,7 @@ import {
 } from 'globalTypes/realm/laundry.types';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import {
+  Button,
   Card,
   Col,
   FormControl,
@@ -22,6 +23,16 @@ import LaundryEntriesConfirmationModal from 'renderer/components/laundryEntries/
 import { getLaundries } from 'renderer/service/laundry';
 import { debounce, pesoFormat } from 'renderer/utils/helper';
 
+const displayLaundries = (
+  pageNumber: number,
+  pageSize: number,
+  laundries: Laundry[]
+) => {
+  const startIndex = (pageNumber - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  return laundries.slice(startIndex, endIndex);
+};
+
 const LaundryEntriesPage = () => {
   const [laundries, setLaundries] = useState<Laundry[]>([]);
   const [confirmationModal, setConfirmationModal] = useState(false);
@@ -29,27 +40,50 @@ const LaundryEntriesPage = () => {
     'delete' | 'claim'
   >('delete');
   const [selectedLaundry, setSelectedLaundry] = useState<Laundry | undefined>();
+  const [hasNextPage, setHasNextPage] = useState(false);
   const [filter, setFilter] = useState<LaundryPaginatedGetFilter>({
     pageNumber: 1,
     pageSize: 50,
     customer: '',
     service: '',
-    dropOffDate: undefined,
+    dropOffDate: new Date(),
     claimedDate: undefined,
     isPaid: '',
     isClaimed: '',
   });
+  const [totals, setTotals] = useState({
+    loads: 0,
+    amount: 0,
+  });
+  const isDisplayTotals = filter.dropOffDate || filter.claimedDate;
 
   const handleGetLaundries = useCallback(async () => {
-    const { isSuccess, result } = await getLaundries(filter);
-    console.log(result);
+    const { pageNumber, pageSize, dropOffDate, claimedDate } = filter;
+    const limit = pageNumber * pageSize + 1;
+
+    const { isSuccess, result } = await getLaundries({
+      ...filter,
+      limit: dropOffDate || claimedDate ? undefined : limit,
+    });
+
     if (isSuccess && result) {
-      setLaundries(result);
+      const t = { loads: 0, amount: 0 };
+      for (const item of result) {
+        t.loads += item.loads.length;
+        t.amount = +(t.amount + item.totalAmount).toFixed(2);
+      }
+      setTotals(t);
+      setLaundries(displayLaundries(pageNumber, pageSize, result));
+      setHasNextPage(result.length > pageSize * pageNumber);
     }
   }, [filter]);
 
   const handleFilterChange = (change: Partial<LaundryPaginatedGetFilter>) => {
-    setFilter({ ...filter, ...change });
+    setFilter({
+      ...filter,
+      ...change,
+      pageNumber: change.pageNumber || 1,
+    });
   };
 
   const handleSearchText = debounce((e: ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +140,8 @@ const LaundryEntriesPage = () => {
           >
             <option value="">All</option>
             <option value="drop-off">Drop-Off</option>
-            <option value="self-service">Self-Service</option>
+            <option value="wash and dry">Wash and Dry</option>
+            <option value="wash only">Wash Only</option>
           </FormSelect>
         </Col>
         <Col lg="2">
@@ -161,12 +196,21 @@ const LaundryEntriesPage = () => {
               />
             </Col>
           </Row>
+          <Row>
+            <Col lg="6">
+              Total Loads: {isDisplayTotals ? totals.loads : 'N/A'}
+            </Col>
+            <Col lg="6">
+              Total Amount:{' '}
+              {isDisplayTotals ? pesoFormat(totals.amount) : 'N/A'}
+            </Col>
+          </Row>
+          <hr />
           <Table responsive>
             <thead>
               <tr>
                 <th>Customer</th>
                 <th>Service</th>
-                <th>Service Price</th>
                 <th>Loads</th>
                 <th>Add-Ons</th>
                 <th>Add-Ons Price</th>
@@ -184,8 +228,9 @@ const LaundryEntriesPage = () => {
                 <tr key={item._id}>
                   <td title={item.customerNumber}>{item.customer}</td>
                   <td>{item.service}</td>
-                  <td>{item.servicePrice}</td>
-                  <td>{item.loads.map((v) => `${v} kg`).join(', ')}</td>
+                  <td>
+                    {item.loads.map((v) => `${v.toFixed(2)} kg`).join(', ')}
+                  </td>
                   <td>
                     {item.addOns.map((v, i) => (
                       <p key={`${i}`} className="mb-0">{`${v.quantity} ${
@@ -239,6 +284,27 @@ const LaundryEntriesPage = () => {
           </Table>
         </Card.Body>
       </Card>
+      <div className="d-flex justify-content-between align-items-center">
+        <Button
+          variant="outline-primary"
+          onClick={() =>
+            filter.pageNumber > 1 &&
+            setFilter({ ...filter, pageNumber: filter.pageNumber - 1 })
+          }
+        >
+          Previous
+        </Button>
+        <p className="pt-3 fw-bold">{filter.pageNumber}</p>
+        <Button
+          variant="outline-primary"
+          onClick={() =>
+            hasNextPage &&
+            setFilter({ ...filter, pageNumber: filter.pageNumber + 1 })
+          }
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 };

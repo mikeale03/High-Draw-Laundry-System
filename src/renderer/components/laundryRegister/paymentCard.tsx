@@ -1,4 +1,5 @@
 /* eslint-disable react/no-unstable-nested-components */
+import { Laundry } from 'globalTypes/realm/laundry.types';
 import { memo, ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { Button, Card, Col, Form, Row } from 'react-bootstrap';
 import { pesoFormat } from 'renderer/utils/helper';
@@ -7,7 +8,7 @@ type Props = {
   loadQty: number;
   subTotal: number;
   addOnsQty: number;
-  service: 'drop-off' | 'self-service';
+  service: Laundry['service'];
   customer: string;
   isPaid: boolean;
   paymentAmount: string;
