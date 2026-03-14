@@ -37,8 +37,8 @@ import PaymentCard from 'renderer/components/laundryRegister/paymentCard';
 import SubmitConfirmationModal from 'renderer/components/laundryRegister/submitConfirmationModal';
 import UserContext from 'renderer/context/userContext';
 import { createLaundry } from 'renderer/service/laundry';
-import { laundryServicePriceRecord } from 'renderer/utils/constants';
 import { twoDecimals } from 'renderer/utils/helper';
+import { laundryServicePriceRecord } from 'globalUtils/constants';
 
 let keyCtr = 1;
 
@@ -49,9 +49,9 @@ const LaundryRegisterPage = () => {
       value: number | string;
     }[]
   >([{ key: 1, value: '' }]);
-  const [service, setService] = useState<'drop-off' | 'self-service'>(
-    'drop-off'
-  );
+  const [service, setService] = useState<
+    'drop-off' | 'wash and dry' | 'wash only'
+  >('drop-off');
   const [productSelectInputValue, setProductSelectInputValue] = useState('');
   const [showInputQuantityModal, setShowInputQuantityModal] = useState(false);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
@@ -217,6 +217,7 @@ const LaundryRegisterPage = () => {
       return;
     }
     toast.success(message);
+    setService('drop-off');
     setShowSubmitConfirmation(false);
     setLoads([{ key: 1, value: '' }]);
     setCustomer('');
@@ -275,21 +276,44 @@ const LaundryRegisterPage = () => {
               <div
                 className={`cursor-pointer rounded-4 bg-white me-3 py-2 px-5  transition-all
               ${
-                service === 'self-service'
+                service === 'wash and dry'
                   ? 'border border-primary'
                   : 'text-muted'
               }`}
                 tabIndex={0}
                 onKeyDown={(e) =>
-                  e.key === 'Enter' && setService('self-service')
+                  e.key === 'Enter' && setService('wash and dry')
                 }
                 style={{ width: '250px' }}
-                onClick={() => setService('self-service')}
+                onClick={() => {
+                  setService('wash and dry');
+                  setIsPaid(false);
+                }}
               >
                 <p className="m-0">
-                  P{laundryServicePriceRecord['self-service']}
+                  P{laundryServicePriceRecord['wash and dry']}{' '}
+                  <span style={{ fontSize: '11px' }}>SELF-SERVICE</span>
                 </p>
-                <h5>SELF-SERVICE</h5>
+                <h5>WASH AND DRY</h5>
+              </div>
+              <div
+                className={`cursor-pointer rounded-4 bg-white me-3 py-2 px-5  transition-all
+              ${
+                service === 'wash only' ? 'border border-primary' : 'text-muted'
+              }`}
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && setService('wash only')}
+                style={{ width: '250px' }}
+                onClick={() => {
+                  setService('wash only');
+                  setIsPaid(false);
+                }}
+              >
+                <p className="m-0">
+                  P{laundryServicePriceRecord['wash only']}{' '}
+                  <span style={{ fontSize: '11px' }}>SELF-SERVICE</span>
+                </p>
+                <h5>WASH ONLY</h5>
               </div>
             </div>
 
@@ -301,7 +325,6 @@ const LaundryRegisterPage = () => {
                   className="text-center ms-1 no-arrow-input"
                   type="number"
                   step="0.01"
-                  max="8"
                   min="0.01"
                   style={{ width: '60px' }}
                   required
@@ -358,6 +381,7 @@ const LaundryRegisterPage = () => {
                         setIsPaid(e.target.checked);
                         setPaymentAmount('');
                       }}
+                      disabled={service !== 'drop-off'}
                     />
                     <FormCheck
                       label="On Claim"

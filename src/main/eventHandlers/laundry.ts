@@ -1,5 +1,5 @@
 import { IpcMain, IpcMainInvokeEvent } from 'electron';
-import { LaundryClaimData, LaundryCreateData, LaundryPaginatedGetFilter } from '../../globalTypes/realm/laundry.types';
+import { LaundryClaimData, LaundryCreateData, LaundryGetFilter } from '../../globalTypes/realm/laundry.types';
 import { LaundryChannels } from '../../globalTypes/channels/laundryChannels';
 import { claimLaundry, createLaundry, deleteLaundry, getLaundries } from '../service/laundryRealm';
 
@@ -7,7 +7,7 @@ import { claimLaundry, createLaundry, deleteLaundry, getLaundries } from '../ser
 const setLaundryEventHandler = (ipcMain: IpcMain) => {
   ipcMain.handle(LaundryChannels.get, async (
     event: IpcMainInvokeEvent,
-    params: LaundryPaginatedGetFilter
+    params: LaundryGetFilter
   ) => {
     const result = await getLaundries(params);
     return result;

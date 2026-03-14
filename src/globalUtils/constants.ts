@@ -1,4 +1,5 @@
 export const laundryServicePriceRecord = {
   ['drop-off']: 160,
-  ['self-service']: 55,
+  ['wash only']: 55,
+  ['wash and dry']: 115,
 };

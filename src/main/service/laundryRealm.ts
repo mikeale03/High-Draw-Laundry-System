@@ -3,7 +3,7 @@ import {
   Laundry,
   LaundryClaimData,
   LaundryCreateData,
-  LaundryPaginatedGetFilter,
+  LaundryGetFilter,
 } from '../../globalTypes/realm/laundry.types';
 import { create } from './realm';
 import { createSales, openSalesRealm, Sales } from './salesRealm';
@@ -21,7 +21,7 @@ export class AddOn extends Realm.Object {
       productName: 'string',
       quantity: 'int',
       price: 'float',
-      totalPrice: 'float'
+      totalPrice: 'float',
     },
   };
 }
@@ -83,8 +83,8 @@ export const createLaundry = async (data: LaundryCreateData) => {
   try {
     if (isPaid && payment) {
       salesRealm = await openSalesRealm();
-      const laundryQuantity = data.loads.length
-      const laundryPrice = laundryServicePriceRecord[data.service]
+      const laundryQuantity = data.loads.length;
+      const laundryPrice = laundryServicePriceRecord[data.service];
 
       const sales: Omit<Sales, '_id'>[] = [
         {
@@ -99,7 +99,7 @@ export const createLaundry = async (data: LaundryCreateData) => {
           transact_by_user_id: transactById,
           transaction_id: data.transactionId,
           product_tags: [],
-          saleSource: 'laundry'
+          saleSource: 'laundry',
         },
       ];
 
@@ -129,7 +129,6 @@ export const createLaundry = async (data: LaundryCreateData) => {
             });
           }
         });
-
       }
       await createSales(sales, salesRealm);
       salesRealm.close();
@@ -171,15 +170,14 @@ export const createLaundry = async (data: LaundryCreateData) => {
 };
 
 export const getLaundries = async ({
-  pageNumber,
-  pageSize,
+  limit,
   customer,
   service,
   dropOffDate,
   claimedDate,
   isPaid,
   isClaimed,
-}: LaundryPaginatedGetFilter) => {
+}: LaundryGetFilter) => {
   const realm = await openLaundryRealm();
   if (!realm) {
     return {
@@ -233,19 +231,19 @@ export const getLaundries = async ({
     const laundries = realm
       .objects(LAUNDRY)
       .filtered(
-        `${query.join(' && ')} SORT(dropOffDate DESC) LIMIT(${
-          pageNumber * pageSize + 1
-        })`,
+        `${query.join(' && ')} SORT(dropOffDate DESC)${
+          limit ? ` LIMIT(${limit})` : ''
+        }`,
         ...args
       );
-    const result = laundries.toJSON() as Laundry[]
+    const result = laundries.toJSON() as Laundry[];
 
     realm.close();
     return {
       isSuccess: true,
-      result: result.map(item => ({
+      result: result.map((item) => ({
         ...item,
-        _id: item._id.toString()
+        _id: item._id.toString(),
       })),
       message: 'Successfully get Laundries',
     };
@@ -290,8 +288,8 @@ export const claimLaundry = async ({
     if (!laundry.isPaid) {
       let productsRealm: Realm | undefined;
       const salesRealm = await openSalesRealm();
-      const laundryQuantity = laundry.loads.length
-      const laundryPrice = laundryServicePriceRecord[laundry.service]
+      const laundryQuantity = laundry.loads.length;
+      const laundryPrice = laundryServicePriceRecord[laundry.service];
 
       const sales: Omit<Sales, '_id'>[] = [
         {
@@ -299,7 +297,7 @@ export const claimLaundry = async ({
           product_name: `laundry - ${laundry.service}`,
           quantity: laundryQuantity,
           price: laundryPrice,
-          total_price: +(laundryPrice * laundryQuantity).toFixed(2) ,
+          total_price: +(laundryPrice * laundryQuantity).toFixed(2),
           payment: payment || 'cash',
           date_created: new Date(),
           transact_by: claimedBy,
@@ -332,7 +330,7 @@ export const claimLaundry = async ({
               transact_by: claimedBy,
               transact_by_user_id: claimedById,
               transaction_id: laundry.transactionId,
-              saleSource: 'laundry'
+              saleSource: 'laundry',
             });
           }
         });
@@ -367,9 +365,7 @@ export const claimLaundry = async ({
   }
 };
 
-export const deleteLaundry = async (
-  _id: string
-) => {
+export const deleteLaundry = async (_id: string) => {
   const realm = await openLaundryRealm();
 
   if (!realm)
@@ -390,13 +386,15 @@ export const deleteLaundry = async (
       };
     }
 
-    const salesRealm = await openSalesRealm()
-    let sales = salesRealm.objects<Sales>("Sales").filtered(`transaction_id == '${laundry.transactionId}'`)
+    const salesRealm = await openSalesRealm();
+    let sales = salesRealm
+      .objects<Sales>('Sales')
+      .filtered(`transaction_id == '${laundry.transactionId}'`);
 
     if (sales) {
       salesRealm.write(() => {
         salesRealm.delete(sales);
-      })
+      });
     }
 
     realm.write(() => {

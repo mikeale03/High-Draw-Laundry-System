@@ -1,12 +1,12 @@
 import { LaundryChannels } from 'globalTypes/channels/laundryChannels';
-import { Laundry, LaundryClaimData, LaundryCreateData, LaundryPaginatedGetFilter } from 'globalTypes/realm/laundry.types';
+import { Laundry, LaundryClaimData, LaundryCreateData, LaundryGetFilter } from 'globalTypes/realm/laundry.types';
 import { Response } from 'globalTypes/realm/response.types';
 
 const {
   electron: { ipcRenderer },
 } = window;
 
-export const getLaundries = async (params: LaundryPaginatedGetFilter) => {
+export const getLaundries = async (params: LaundryGetFilter) => {
   const response = await ipcRenderer.invoke<Response<Laundry[]>>(
     LaundryChannels.get,
     params
