@@ -15,7 +15,7 @@ const Header = () => {
       style={{ height: '50px', zIndex: 999 }}
     >
       <div>
-        <p className="m-0">Sales And Inventory System</p>
+        <p className="m-0">High Draw Laundry System</p>
       </div>
       <div>
         <span className="me-5 fw-bold">{user?.username}</span>
