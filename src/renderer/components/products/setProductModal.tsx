@@ -165,14 +165,18 @@ const SetProductModal = ({
               required
             />
           </Form.Group>
-          <CategorySelect
-            value={product.category ?? ''}
-            onSelect={(category) => handleChange({ category })}
-          />
-          <TagsSelect
-            value={product.tags ?? []}
-            onChange={(v) => handleChange({ tags: v })}
-          />
+          <div className="mb-3">
+            <CategorySelect
+              value={product.category ?? ''}
+              onSelect={(category) => handleChange({ category })}
+            />
+          </div>
+          <div className="mb-3">
+            <TagsSelect
+              value={product.tags ?? []}
+              onChange={(v) => handleChange({ tags: v })}
+            />
+          </div>
           <Form.Group className="mb-3">
             <Form.Label>Description</Form.Label>
             <Form.Control

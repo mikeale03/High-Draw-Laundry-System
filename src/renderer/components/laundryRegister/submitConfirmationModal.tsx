@@ -88,7 +88,7 @@ const SubmitConfirmationModal = ({
             </Col>
 
             <Col xs="6" className="fs-5">
-              Customer:
+              customer:
             </Col>
             <Col xs="6">
               <p className="m-0 mb-1 fs-5 text-end">

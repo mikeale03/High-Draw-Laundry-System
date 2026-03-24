@@ -239,12 +239,12 @@ const LaundryEntriesPage = () => {
                     ))}
                   </td>
                   <td>{pesoFormat(item.addOnsPrice)}</td>
-                  <td>{format(item.dropOffDate, 'MM/dd/yyyy hh:mm')}</td>
+                  <td>{format(item.dropOffDate, 'MM/dd/yyyy hh:mm aaa')}</td>
                   <td>{pesoFormat(item.totalAmount)}</td>
                   <td>{item.isPaid ? 'Yes' : 'No'}</td>
                   <td>
                     {item.claimedDate &&
-                      format(item.claimedDate, 'MM-dd-yyyy hh:mm')}
+                      format(item.claimedDate, 'MM/dd/yyyy hh:mm aaa')}
                   </td>
                   <td>{item.claimedBy}</td>
                   <td>{item.transactBy}</td>

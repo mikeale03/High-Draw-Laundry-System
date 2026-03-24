@@ -36,7 +36,11 @@ const Sidebar = () => {
         style={user?.role === 'admin' ? { marginBottom: '65px' } : undefined}
       >
         <ul className="nav flex-column mt-3">
-          <NavLink to="laundry-register" className="mb-3">
+          <NavLink
+            to="laundry-register"
+            className="mb-3"
+            style={hasItems ? { pointerEvents: 'none' } : {}}
+          >
             {({ isActive }) => (
               <li
                 className={`nav-link cursor-pointer text-center rounded bg-white mx-3 py-3 px-0 transition-all
@@ -52,7 +56,11 @@ const Sidebar = () => {
               </li>
             )}
           </NavLink>
-          <NavLink to="laundry-entries" className="mb-3">
+          <NavLink
+            to="laundry-entries"
+            className="mb-3"
+            style={hasItems ? { pointerEvents: 'none' } : {}}
+          >
             {({ isActive }) => (
               <li
                 className={`nav-link cursor-pointer text-center rounded bg-white mx-3 py-3 px-0 transition-all
