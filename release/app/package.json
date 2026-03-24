@@ -1,7 +1,7 @@
 {
-  "name": "sales_and_inventory",
+  "name": "laundry_sales_and_inventory",
   "version": "4.6.0",
-  "description": "An app for managing your sales and inventory",
+  "description": "An app for managing your laundry, sales and inventory",
   "license": "MIT",
   "author": {
     "name": "Electron React Boilerplate Maintainers",
