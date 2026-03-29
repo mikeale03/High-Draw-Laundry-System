@@ -299,46 +299,6 @@ const LaundryRegisterPage = () => {
                 </p>
                 <h5 className="m-0">SELF-SERVICE</h5>
               </div>
-              {/* <div
-                className={`cursor-pointer rounded-4 bg-white me-3 py-2 px-5  transition-all
-              ${
-                service !== 'drop-off' ? 'border border-primary' : 'text-muted'
-              }`}
-                tabIndex={0}
-                onKeyDown={(e) =>
-                  e.key === 'Enter' && setService('wash and dry')
-                }
-                style={{ width: '250px' }}
-                onClick={() => {
-                  setService('wash and dry');
-                  setIsPaid(false);
-                }}
-              >
-                <p className="m-0">
-                  P{laundryServicePriceRecord['wash and dry']}{' '}
-                  <span style={{ fontSize: '11px' }}>SELF-SERVICE</span>
-                </p>
-                <h5>WASH AND DRY</h5>
-              </div>
-              <div
-                className={`cursor-pointer rounded-4 bg-white me-3 py-2 px-5  transition-all
-              ${
-                service === 'wash only' ? 'border border-primary' : 'text-muted'
-              }`}
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setService('wash only')}
-                style={{ width: '250px' }}
-                onClick={() => {
-                  setService('wash only');
-                  setIsPaid(false);
-                }}
-              >
-                <p className="m-0">
-                  P{laundryServicePriceRecord['wash only']}{' '}
-                  <span style={{ fontSize: '11px' }}>SELF-SERVICE</span>
-                </p>
-                <h5>WASH ONLY</h5>
-              </div> */}
             </div>
 
             {loads.map((v, i) => (
@@ -396,27 +356,35 @@ const LaundryRegisterPage = () => {
                   <FormGroup>
                     <FormLabel className="fw-bold">Payment</FormLabel>
                     <div className="d-flex p-2">
-                      <FormCheck
-                        className="me-3"
-                        label="On Drop-off"
-                        name="group1"
-                        type="radio"
-                        checked={isPaid}
-                        onChange={(e) => {
-                          setIsPaid(e.target.checked);
-                          setPaymentAmount('');
-                        }}
-                      />
-                      <FormCheck
-                        label="On Claim"
-                        name="group1"
-                        type="radio"
-                        checked={!isPaid}
-                        onChange={(e) => {
-                          setIsPaid(!e.target.checked);
-                          setPaymentAmount('');
-                        }}
-                      />
+                      <div onClick={() => setIsPaid(true)}>
+                        <FormCheck
+                          className="me-3"
+                          label={
+                            <span className="cursor-pointer">On Drop-Off</span>
+                          }
+                          name="group1"
+                          type="radio"
+                          checked={isPaid}
+                          onChange={(e) => {
+                            setIsPaid(e.target.checked);
+                            setPaymentAmount('');
+                          }}
+                        />
+                      </div>
+                      <div onClick={() => setIsPaid(false)}>
+                        <FormCheck
+                          label={
+                            <span className="cursor-pointer">On Claim</span>
+                          }
+                          name="group1"
+                          type="radio"
+                          checked={!isPaid}
+                          onChange={(e) => {
+                            setIsPaid(!e.target.checked);
+                            setPaymentAmount('');
+                          }}
+                        />
+                      </div>
                     </div>
                   </FormGroup>
                 ) : (
