@@ -393,23 +393,41 @@ const LaundryRegisterPage = () => {
                       Self-Service Option
                     </FormLabel>
                     <div className="d-flex p-2">
-                      <FormCheck
-                        className="me-3"
-                        label="Wash And Dry"
-                        type="radio"
-                        checked={service === 'wash and dry'}
+                      <div
                         onClick={() =>
                           handleSelectSelfServiceOption('wash and dry')
                         }
-                      />
-                      <FormCheck
-                        label="Wash Only"
-                        type="radio"
-                        checked={service === 'wash only'}
+                      >
+                        <FormCheck
+                          className="me-3"
+                          label="Wash And Dry"
+                          type="radio"
+                          checked={service === 'wash and dry'}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelfServiceType('wash and dry');
+                              setService('wash and dry');
+                            }
+                          }}
+                        />
+                      </div>
+                      <div
                         onClick={() =>
                           handleSelectSelfServiceOption('wash only')
                         }
-                      />
+                      >
+                        <FormCheck
+                          label="Wash Only"
+                          type="radio"
+                          checked={service === 'wash only'}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelfServiceType('wash only');
+                              setService('wash only');
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                   </FormGroup>
                 )}
