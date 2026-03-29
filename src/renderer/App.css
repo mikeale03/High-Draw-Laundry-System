@@ -24,6 +24,10 @@ input[type='checkbox'] {
   cursor: pointer;
 }
 
+input[type="radio"] {
+  cursor: pointer;
+}
+
 .scroll-sm::-webkit-scrollbar {
   width: 5px;
 }
