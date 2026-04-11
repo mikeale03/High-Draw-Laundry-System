@@ -1,7 +1,7 @@
 import { IpcMain, IpcMainInvokeEvent } from 'electron';
 import { LaundryClaimData, LaundryCreateData, LaundryGetFilter } from '../../globalTypes/realm/laundry.types';
 import { LaundryChannels } from '../../globalTypes/channels/laundryChannels';
-import { claimLaundry, createLaundry, deleteLaundry, getLaundries } from '../service/laundryRealm';
+import { claimLaundry, createLaundry, deleteLaundry, getLaundries, setPackingQuantity } from '../service/laundryRealm';
 
 
 const setLaundryEventHandler = (ipcMain: IpcMain) => {
@@ -23,6 +23,13 @@ const setLaundryEventHandler = (ipcMain: IpcMain) => {
     LaundryChannels.claim,
     async (event: IpcMainInvokeEvent, params: LaundryClaimData) => {
       const result = await claimLaundry(params);
+      return result;
+    }
+  );
+  ipcMain.handle(
+    LaundryChannels.packing,
+    async (event: IpcMainInvokeEvent, _id: string, quantity: number) => {
+      const result = await setPackingQuantity(_id, quantity);
       return result;
     }
   );

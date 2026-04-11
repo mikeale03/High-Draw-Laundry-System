@@ -20,6 +20,7 @@ export type Laundry = {
   dropOffDate: Date;
   totalAmount: number;
   customerNumber?: string;
+  packingQty: number;
   transactBy: string;
   claimedBy?: string;
   transactById: string;
@@ -27,7 +28,7 @@ export type Laundry = {
   transactionId: string;
 }
 
-export type LaundryCreateData = Omit<Laundry, '_id'>
+export type LaundryCreateData = Omit<Laundry, '_id' | 'packingQty'>
 
 export type LaundryClaimData = {
   _id: string;
@@ -37,10 +38,13 @@ export type LaundryClaimData = {
 }
 
 export type LaundryGetFilter = {
+  userId?: string;
   customer: string;
   service: string;
-  dropOffDate?: Date | null;
-  claimedDate?: Date | null;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  // dropOffDate?: Date | null;
+  // claimedDate?: Date | null;
   isPaid: string;
   isClaimed: string;
   limit?: number;
@@ -50,10 +54,13 @@ export type LaundryGetFilter = {
 export type LaundryPaginatedGetFilter = {
   pageNumber: number;
   pageSize: number;
+  userId?: string;
   customer: string;
   service: string;
-  dropOffDate?: Date | null;
-  claimedDate?: Date | null;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  // dropOffDate?: Date | null;
+  // claimedDate?: Date | null;
   isPaid: string;
   isClaimed: string;
 }

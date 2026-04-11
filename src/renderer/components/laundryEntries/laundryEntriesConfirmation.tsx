@@ -111,7 +111,11 @@ const LaundryEntriesConfirmationModal = ({
       >
         <Form onSubmit={handleConfirm}>
           <Modal.Header>
-            <Modal.Title className="fw-bold text-center d-block w-100 text-capitalize">
+            <Modal.Title
+              className={`fw-bold text-center d-block w-100 text-capitalize ${
+                action === 'delete' ? 'text-danger' : ''
+              }`}
+            >
               {action} Confirmation
             </Modal.Title>
           </Modal.Header>

@@ -1,10 +1,10 @@
 import { ChangeEvent, useEffect, useState } from 'react';
 import { FormSelect } from 'react-bootstrap';
 
-export type Props = {
+export type ShiftSelectProps = {
   onSelect: (params: { startDate: Date; endDate: Date }) => void;
-  startDate: Date;
-  endDate: Date;
+  startDate?: Date | null;
+  endDate?: Date | null;
 };
 
 let shiftAStart = new Date();
@@ -14,35 +14,35 @@ let shiftBEnd = new Date();
 let shiftCStart = new Date();
 let shiftCEnd = new Date();
 
-function ShiftSelect({ startDate, endDate, onSelect }: Props) {
+function ShiftSelect({ startDate, endDate, onSelect }: ShiftSelectProps) {
   const [val, setVal] = useState('');
-  shiftAStart = new Date(startDate);
+  shiftAStart = startDate ? new Date(startDate) : shiftAStart;
   shiftAStart.setHours(7, 0, 0, 0);
-  shiftAEnd = new Date(endDate);
+  shiftAEnd = endDate ? new Date(endDate) : shiftAEnd;
   shiftAEnd.setHours(15, 59, 59, 999);
-  shiftBStart = new Date(startDate);
+  shiftBStart = startDate ? new Date(startDate) : shiftBStart;
   shiftBStart.setHours(8, 0, 0, 0);
-  shiftBEnd = new Date(endDate);
+  shiftBEnd = endDate ? new Date(endDate) : shiftBEnd;
   shiftBEnd.setHours(16, 59, 59, 999);
-  shiftCStart = new Date(startDate);
+  shiftCStart = startDate ? new Date(startDate) : shiftCStart;
   shiftCStart.setHours(16, 0, 0, 0);
-  shiftCEnd = new Date(endDate);
+  shiftCEnd = endDate ? new Date(endDate) : shiftCEnd;
   shiftCEnd.setHours(9, 59, 59, 999);
 
   useEffect(() => {
     if (
-      startDate.getTime() === shiftAStart.getTime() &&
-      endDate.getTime() === shiftAEnd.getTime()
+      startDate?.getTime() === shiftAStart.getTime() &&
+      endDate?.getTime() === shiftAEnd.getTime()
     )
       setVal('a');
     else if (
-      startDate.getTime() === shiftBStart.getTime() &&
-      endDate.getTime() === shiftBEnd.getTime()
+      startDate?.getTime() === shiftBStart.getTime() &&
+      endDate?.getTime() === shiftBEnd.getTime()
     )
       setVal('b');
     else if (
-      startDate.getTime() === shiftCStart.getTime() &&
-      endDate.getTime() === shiftCEnd.getTime()
+      startDate?.getTime() === shiftCStart.getTime() &&
+      endDate?.getTime() === shiftCEnd.getTime()
     )
       setVal('c');
     else setVal('');

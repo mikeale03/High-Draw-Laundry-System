@@ -4,6 +4,7 @@ export const LaundryChannels = {
   delete: 'laundries:delete',
   get: 'laundries:get',
   claim: 'laundries:claim',
+  packing: 'laundries:packing',
 } as const;
 
 export type LaundryChannels =

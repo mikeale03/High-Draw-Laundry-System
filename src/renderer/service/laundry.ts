@@ -30,6 +30,14 @@ export const claimLaundry = async (params: LaundryClaimData) => {
   return response;
 };
 
+export const setPackingQuantity = async (_id: string, quantity: number) => {
+  const response = await ipcRenderer.invoke<Response<Laundry>>(
+    LaundryChannels.packing,
+    _id, quantity
+  );
+  return response;
+};
+
 export const deleteLaundry = async (_id: string) => {
   const response = await ipcRenderer.invoke<Response<void>>(
     LaundryChannels.delete,
