@@ -275,15 +275,6 @@ const LaundryEntriesPage = () => {
                       tabIndex={0}
                       onClick={() => handleShowPackingModal(item)}
                     />
-                    <FontAwesomeIcon
-                      icon={faTrashCan}
-                      title="Delete"
-                      size="xl"
-                      className="me-2 cursor-pointer"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleDeleteConfirmation(item)}
-                    />
                     {!item.claimedDate && (
                       <FontAwesomeIcon
                         icon={faPersonWalkingLuggage}
@@ -295,6 +286,15 @@ const LaundryEntriesPage = () => {
                         onClick={() => handleClaimConfirmation(item)}
                       />
                     )}
+                    <FontAwesomeIcon
+                      icon={faTrashCan}
+                      title="Delete"
+                      size="xl"
+                      className="me-2 text-danger cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleDeleteConfirmation(item)}
+                    />
                   </td>
                 </tr>
               ))}
