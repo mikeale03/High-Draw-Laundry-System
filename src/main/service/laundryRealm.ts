@@ -42,6 +42,7 @@ export class LaundrySchema extends Realm.Object<Laundry> {
       claimedDate: 'date?',
       totalAmount: 'float',
       customerNumber: 'string?',
+      packingQty: { type: 'int', default: 1 },
       dropOffDate: { type: 'date', indexed: true },
       transactBy: 'string',
       claimedBy: 'string?',
@@ -58,8 +59,7 @@ export const openLaundryRealm = async () => {
     const realm = await Realm.open({
       path: '../realm/laundry',
       schema: [LaundrySchema, AddOn],
-      // schemaVersion: 3,
-      // deleteRealmIfMigrationNeeded: true,
+      schemaVersion: 2,
     });
     return realm;
   } catch (error) {
@@ -173,8 +173,11 @@ export const getLaundries = async ({
   limit,
   customer,
   service,
-  dropOffDate,
-  claimedDate,
+  userId,
+  startDate,
+  endDate,
+  // dropOffDate,
+  // claimedDate,
   isPaid,
   isClaimed,
 }: LaundryGetFilter) => {
@@ -195,28 +198,40 @@ export const getLaundries = async ({
     query.push(`service == $${args.length}`);
     args.push(service);
   }
-  if (dropOffDate) {
-    const dropOffStartDate = new Date(dropOffDate);
-    dropOffStartDate.setHours(0, 0, 0, 0);
-    query.push(`dropOffDate >= $${args.length}`);
-    args.push(dropOffStartDate);
-
-    const dropOffEndDate = new Date(dropOffDate);
-    dropOffEndDate.setHours(23, 59, 59, 999);
-    query.push(`dropOffDate <= $${args.length}`);
-    args.push(dropOffEndDate);
+  if (userId) {
+    query.push(`(transactById == $${args.length} OR claimedById == $${args.length})`);
+    args.push(userId);
   }
-  if (claimedDate) {
-    const claimStartDate = new Date(claimedDate);
-    claimStartDate.setHours(0, 0, 0, 0);
-    query.push(`claimedDate >= $${args.length}`);
-    args.push(claimStartDate);
-
-    const claimEndDate = new Date(claimedDate);
-    claimEndDate.setHours(23, 59, 59, 999);
-    query.push(`claimedDate <= $${args.length}`);
-    args.push(claimEndDate);
+  if (startDate) {
+    query.push(`(dropOffDate >= $${args.length} OR claimedDate >= $${args.length})`);
+    args.push(startDate);
   }
+  if (endDate) {
+    query.push(`(dropOffDate <= $${args.length} OR claimedDate <= $${args.length})`);
+    args.push(endDate);
+  }
+  // if (dropOffDate) {
+  //   const dropOffStartDate = new Date(dropOffDate);
+  //   dropOffStartDate.setHours(0, 0, 0, 0);
+  //   query.push(`dropOffDate >= $${args.length}`);
+  //   args.push(dropOffStartDate);
+
+  //   const dropOffEndDate = new Date(dropOffDate);
+  //   dropOffEndDate.setHours(23, 59, 59, 999);
+  //   query.push(`dropOffDate <= $${args.length}`);
+  //   args.push(dropOffEndDate);
+  // }
+  // if (claimedDate) {
+  //   const claimStartDate = new Date(claimedDate);
+  //   claimStartDate.setHours(0, 0, 0, 0);
+  //   query.push(`claimedDate >= $${args.length}`);
+  //   args.push(claimStartDate);
+
+  //   const claimEndDate = new Date(claimedDate);
+  //   claimEndDate.setHours(23, 59, 59, 999);
+  //   query.push(`claimedDate <= $${args.length}`);
+  //   args.push(claimEndDate);
+  // }
   if (isPaid) {
     const isYes = isPaid === 'yes';
     query.push(`isPaid == $${args.length}`);
@@ -360,6 +375,47 @@ export const claimLaundry = async ({
     return {
       isSuccess: false,
       message: 'Failed to claim Laundry',
+      error,
+    };
+  }
+};
+
+export const setPackingQuantity = async (_id: string, quantity: number) => {
+  const realm = await openLaundryRealm();
+
+  if (!realm)
+    return {
+      isSuccess: false,
+      message: 'Error opening laundry realm db',
+    };
+  try {
+    let laundry = realm.objectForPrimaryKey<Laundry>(
+      LAUNDRY,
+      new Realm.BSON.ObjectID(_id)
+    );
+    if (!laundry) {
+      realm.close();
+      return {
+        isSuccess: false,
+        message: 'Laundry entry not found',
+      };
+    }
+
+    realm.write(() => {
+      laundry.packingQty = quantity;
+    });
+
+    realm?.close();
+    return {
+      isSuccess: true,
+      message: 'Successfully set packing quantity',
+    };
+  } catch (error) {
+    console.log(error);
+    realm?.close();
+    return {
+      isSuccess: false,
+      message: 'Failed to update Laundry Entry',
       error,
     };
   }

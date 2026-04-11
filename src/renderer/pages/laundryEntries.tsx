@@ -1,6 +1,9 @@
 /* eslint-disable react/no-array-index-key */
 import { faTrashCan } from '@fortawesome/free-regular-svg-icons';
-import { faPersonWalkingLuggage } from '@fortawesome/free-solid-svg-icons';
+import {
+  faPenToSquare,
+  faPersonWalkingLuggage,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { format } from 'date-fns';
 import {
@@ -13,14 +16,15 @@ import {
   Card,
   Col,
   FormControl,
-  FormLabel,
-  FormSelect,
+  Modal,
   Row,
   Table,
 } from 'react-bootstrap';
-import ReactDatePicker from 'react-datepicker';
+import { toast } from 'react-toastify';
 import LaundryEntriesConfirmationModal from 'renderer/components/laundryEntries/laundryEntriesConfirmation';
-import { getLaundries } from 'renderer/service/laundry';
+import LaundryEntriesFilter from 'renderer/components/laundryEntries/laundryEntriesFilter';
+import { getLaundries, setPackingQuantity } from 'renderer/service/laundry';
+import useLaundryFilterStore from 'renderer/store/filtersStore/laundryFilterStore';
 import { debounce, pesoFormat } from 'renderer/utils/helper';
 
 const displayLaundries = (
@@ -39,32 +43,27 @@ const LaundryEntriesPage = () => {
   const [confimationAction, setConfimationAction] = useState<
     'delete' | 'claim'
   >('delete');
+  const [packingQuantiyModal, setPackingQuantiyModal] = useState(false);
   const [selectedLaundry, setSelectedLaundry] = useState<Laundry | undefined>();
   const [hasNextPage, setHasNextPage] = useState(false);
-  const [filter, setFilter] = useState<LaundryPaginatedGetFilter>({
-    pageNumber: 1,
-    pageSize: 50,
-    customer: '',
-    service: '',
-    dropOffDate: new Date(),
-    claimedDate: undefined,
-    isPaid: '',
-    isClaimed: '',
-  });
+  const [packingQty, setPackingQty] = useState<string | number>(1);
+
   const [totals, setTotals] = useState({
     loads: 0,
     amount: 0,
   });
-  const isDisplayTotals = filter.dropOffDate || filter.claimedDate;
+
+  const { state: filter, setState: setFilter } = useLaundryFilterStore(
+    (state) => state
+  );
+
+  const isDisplayTotals = filter.startDate;
 
   const handleGetLaundries = useCallback(async () => {
-    const { pageNumber, pageSize, dropOffDate, claimedDate } = filter;
-    const limit = pageNumber * pageSize + 1;
+    const { pageNumber, pageSize } = filter;
+    // const limit = pageNumber * pageSize + 1;
 
-    const { isSuccess, result } = await getLaundries({
-      ...filter,
-      limit: dropOffDate || claimedDate ? undefined : limit,
-    });
+    const { isSuccess, result, message } = await getLaundries(filter);
 
     if (isSuccess && result) {
       const t = { loads: 0, amount: 0 };
@@ -75,6 +74,9 @@ const LaundryEntriesPage = () => {
       setTotals(t);
       setLaundries(displayLaundries(pageNumber, pageSize, result));
       setHasNextPage(result.length > pageSize * pageNumber);
+    }
+    if (!isSuccess) {
+      toast.error(message);
     }
   }, [filter]);
 
@@ -116,6 +118,32 @@ const LaundryEntriesPage = () => {
     setSelectedLaundry(laundry);
   };
 
+  const handleShowPackingModal = async (laundry: Laundry) => {
+    setSelectedLaundry(laundry);
+    setPackingQty(laundry.packingQty);
+    setPackingQuantiyModal(true);
+  };
+
+  const handleSetPackingQuantity = async () => {
+    if (!selectedLaundry) return;
+    const { isSuccess, message } = await setPackingQuantity(
+      selectedLaundry?._id,
+      +packingQty
+    );
+
+    if (isSuccess) {
+      const newLaundries = laundries.map((item) =>
+        item._id === selectedLaundry._id
+          ? { ...item, packingQty: +packingQty }
+          : item
+      );
+      setLaundries(newLaundries);
+      setPackingQuantiyModal(false);
+    } else {
+      toast.error(message);
+    }
+  };
+
   useEffect(() => {
     handleGetLaundries();
   }, [handleGetLaundries]);
@@ -130,61 +158,48 @@ const LaundryEntriesPage = () => {
         onConfirm={handleConfirm}
       />
 
+      <Modal
+        show={packingQuantiyModal}
+        onHide={() => setPackingQuantiyModal(false)}
+        size="sm"
+        centered
+      >
+        <Modal.Header>
+          <Modal.Title className="fw-bold text-center d-block w-100">
+            Packing Quantity
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <FormControl
+            className="text-center"
+            type="number"
+            placeholder="Enter Quantity"
+            step={1}
+            min={1}
+            required
+            value={packingQty}
+            onChange={(e) => setPackingQty(e.target.value)}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setPackingQty('');
+              setPackingQuantiyModal(false);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSetPackingQuantity}>
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       <h3>Laundry Entries</h3>
-      <Row className="mb-3">
-        <Col lg="2">
-          <FormLabel>Service</FormLabel>
-          <FormSelect
-            value={filter.service}
-            onChange={(e) => handleFilterChange({ service: e.target.value })}
-          >
-            <option value="">All</option>
-            <option value="drop-off">Drop-Off</option>
-            <option value="wash and dry">Wash and Dry</option>
-            <option value="wash only">Wash Only</option>
-          </FormSelect>
-        </Col>
-        <Col lg="2">
-          <FormLabel>Drop-Off Date</FormLabel>
-          <ReactDatePicker
-            className="form-control"
-            selected={filter.dropOffDate}
-            onChange={(dropOffDate) => handleFilterChange({ dropOffDate })}
-            isClearable
-          />
-        </Col>
-        <Col lg="2">
-          <FormLabel>Claimed Date</FormLabel>
-          <ReactDatePicker
-            className="form-control"
-            selected={filter.claimedDate}
-            onChange={(claimedDate) => handleFilterChange({ claimedDate })}
-            isClearable
-          />
-        </Col>
-        <Col lg="2">
-          <FormLabel>Paid</FormLabel>
-          <FormSelect
-            value={filter.isPaid}
-            onChange={(e) => handleFilterChange({ isPaid: e.target.value })}
-          >
-            <option value="">All</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </FormSelect>
-        </Col>
-        <Col lg="2">
-          <FormLabel>Claimed</FormLabel>
-          <FormSelect
-            value={filter.isClaimed}
-            onChange={(e) => handleFilterChange({ isClaimed: e.target.value })}
-          >
-            <option value="">All</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </FormSelect>
-        </Col>
-      </Row>
+
+      <LaundryEntriesFilter />
       <Card>
         <Card.Body>
           <Row className="mb-3">
@@ -216,6 +231,7 @@ const LaundryEntriesPage = () => {
                 <th>Add-Ons Price</th>
                 <th>Drop-Off Date</th>
                 <th>Total Amount</th>
+                <th>Packing Qty</th>
                 <th>Paid</th>
                 <th>Claimed Date</th>
                 <th>Claimed By</th>
@@ -241,6 +257,7 @@ const LaundryEntriesPage = () => {
                   <td>{pesoFormat(item.addOnsPrice)}</td>
                   <td>{format(item.dropOffDate, 'MM/dd/yyyy hh:mm aaa')}</td>
                   <td>{pesoFormat(item.totalAmount)}</td>
+                  <td>{item.packingQty.toLocaleString()}</td>
                   <td>{item.isPaid ? 'Yes' : 'No'}</td>
                   <td>
                     {item.claimedDate &&
@@ -249,14 +266,15 @@ const LaundryEntriesPage = () => {
                   <td>{item.claimedBy}</td>
                   <td>{item.transactBy}</td>
                   <td>
-                    {/* <FontAwesomeIcon
+                    <FontAwesomeIcon
                       icon={faPenToSquare}
-                      title="Edit"
+                      title="Update Packing Quantity"
                       size="xl"
                       className="me-2 cursor-pointer"
                       role="button"
                       tabIndex={0}
-                    /> */}
+                      onClick={() => handleShowPackingModal(item)}
+                    />
                     <FontAwesomeIcon
                       icon={faTrashCan}
                       title="Delete"
