@@ -78,40 +78,23 @@ export const createLaundry = async (data: LaundryCreateData) => {
   }
   let salesRealm: Realm | undefined;
   let productsRealm: Realm | undefined;
+  const sales: Omit<Sales, '_id'>[] = []
   const { addOns, isPaid, payment, transactBy, transactById } = data;
 
   try {
-    if (isPaid && payment) {
-      salesRealm = await openSalesRealm();
-      const laundryQuantity = data.loads.length;
-      const laundryPrice = laundryServicePriceRecord[data.service];
-
-      const sales: Omit<Sales, '_id'>[] = [
-        {
-          product_id: `laundry-${data.service}`,
-          product_name: `laundry - ${data.service}`,
-          quantity: laundryQuantity,
-          price: laundryPrice,
-          total_price: +(laundryPrice * laundryQuantity).toFixed(2),
-          payment,
-          date_created: new Date(),
-          transact_by: transactBy,
-          transact_by_user_id: transactById,
-          transaction_id: data.transactionId,
-          product_tags: [],
-          saleSource: 'laundry',
-        },
-      ];
-
-      if (addOns.length) {
-        productsRealm = await openProductsRealm();
-
-        addOns.forEach((item) => {
-          const product = productsRealm?.objectForPrimaryKey<Product>(
-            PRODUCTS,
-            new Realm.BSON.ObjectID(item.productId)
-          );
-          if (product) {
+    if (addOns.length) {
+      productsRealm = await openProductsRealm();
+      addOns.forEach((item) => {
+        const product = productsRealm?.objectForPrimaryKey<Product>(
+          PRODUCTS,
+          new Realm.BSON.ObjectID(item.productId)
+        );
+        if (product) {
+          productsRealm?.write(() => {
+            product.quantity -= item.quantity;
+            product.last_transaction_date = new Date();
+          });
+          if (isPaid && payment) {
             sales.push({
               product_id: 'laundry-add-on',
               product_name: product.name,
@@ -128,12 +111,64 @@ export const createLaundry = async (data: LaundryCreateData) => {
               saleSource: 'laundry',
             });
           }
-        });
-      }
-      await createSales(sales, salesRealm);
-      salesRealm.close();
-      productsRealm?.close();
+        }
+      });
     }
+    if (isPaid && payment) {
+      salesRealm = await openSalesRealm();
+      const laundryQuantity = data.loads.length;
+      const laundryPrice = laundryServicePriceRecord[data.service];
+
+      sales.push({
+        product_id: `laundry-${data.service}`,
+        product_name: `laundry - ${data.service}`,
+        quantity: laundryQuantity,
+        price: laundryPrice,
+        total_price: +(laundryPrice * laundryQuantity).toFixed(2),
+        payment,
+        date_created: new Date(),
+        transact_by: transactBy,
+        transact_by_user_id: transactById,
+        transaction_id: data.transactionId,
+        product_tags: [],
+        saleSource: 'laundry',
+      });
+
+      // if (addOns.length) {
+      //   productsRealm = await openProductsRealm();
+
+      //   addOns.forEach((item) => {
+      //     const product = productsRealm?.objectForPrimaryKey<Product>(
+      //       PRODUCTS,
+      //       new Realm.BSON.ObjectID(item.productId)
+      //     );
+      //     if (product) {
+      //       sales.push({
+      //         product_id: 'laundry-add-on',
+      //         product_name: product.name,
+      //         product_category: product.category ?? '',
+      //         product_tags: product.tags ?? [],
+      //         quantity: item.quantity,
+      //         price: item.price,
+      //         total_price: +(item.price * item.quantity).toFixed(2),
+      //         payment,
+      //         date_created: new Date(),
+      //         transact_by: transactBy,
+      //         transact_by_user_id: transactById,
+      //         transaction_id: data.transactionId,
+      //         saleSource: 'laundry',
+      //       });
+      //       productsRealm?.write(() => {
+      //         product.quantity -= item.quantity;
+      //         product.last_transaction_date = new Date();
+      //       });
+      //     }
+      //   });
+      // }
+      await createSales(sales, salesRealm);
+    }
+    salesRealm?.close();
+    productsRealm?.close();
   } catch (error) {
     salesRealm?.close();
     console.log(error);
@@ -176,10 +211,9 @@ export const getLaundries = async ({
   userId,
   startDate,
   endDate,
-  // dropOffDate,
-  // claimedDate,
   isPaid,
   isClaimed,
+  dateFilter
 }: LaundryGetFilter) => {
   const realm = await openLaundryRealm();
   if (!realm) {
@@ -203,11 +237,11 @@ export const getLaundries = async ({
     args.push(userId);
   }
   if (startDate) {
-    query.push(`(dropOffDate >= $${args.length} OR claimedDate >= $${args.length})`);
+    query.push(`${dateFilter} >= $${args.length}`);
     args.push(startDate);
   }
   if (endDate) {
-    query.push(`(dropOffDate <= $${args.length} OR claimedDate <= $${args.length})`);
+    query.push(`${dateFilter} <= $${args.length}`);
     args.push(endDate);
   }
   // if (dropOffDate) {

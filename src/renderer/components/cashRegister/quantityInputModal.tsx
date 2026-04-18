@@ -1,7 +1,6 @@
 import { Product } from 'main/service/productsRealm';
 import { FormEvent, useState } from 'react';
 import { Button, Form, Modal, Col, Row } from 'react-bootstrap';
-import { toPascalCase } from 'renderer/utils/helper';
 
 export type Props = {
   show: boolean;

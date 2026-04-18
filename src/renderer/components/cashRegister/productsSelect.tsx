@@ -1,4 +1,11 @@
-import { KeyboardEvent, forwardRef, useEffect, useState } from 'react';
+import {
+  Dispatch,
+  KeyboardEvent,
+  SetStateAction,
+  forwardRef,
+  useEffect,
+  useState,
+} from 'react';
 import { Product } from 'main/service/productsRealm';
 import Select, { SelectInstance } from 'react-select';
 import { getProducts } from 'renderer/service/products';
@@ -15,6 +22,8 @@ type Props = {
   inputValue: string;
   onInputChange: (input: string) => void;
   autofocus?: boolean;
+  refetchOptions?: boolean;
+  setRefetchOptions?: Dispatch<SetStateAction<boolean>>;
 };
 
 const handleGetProducts = debounce(async (searchText: string) => {
@@ -26,7 +35,17 @@ const handleGetProducts = debounce(async (searchText: string) => {
 }, 300);
 
 const ProductsSelect = forwardRef<SelectInstance<Opt> | null, Props>(
-  ({ onSelect, inputValue, onInputChange, autofocus }, ref) => {
+  (
+    {
+      onSelect,
+      inputValue,
+      onInputChange,
+      autofocus,
+      refetchOptions,
+      setRefetchOptions,
+    },
+    ref
+  ) => {
     const [productOptions, setProductOptions] = useState<Opt[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [menuIsOpen, setMenuIsOpen] = useState(false);
@@ -66,7 +85,19 @@ const ProductsSelect = forwardRef<SelectInstance<Opt> | null, Props>(
         setIsLoading(false);
         setProductOptions(opt);
       })();
-    }, [inputValue]);
+    }, [inputValue, refetchOptions]);
+
+    useEffect(() => {
+      (async () => {
+        if (refetchOptions) {
+          setIsLoading(true);
+          const opt = await handleGetOptions('');
+          setIsLoading(false);
+          setProductOptions(opt);
+          setRefetchOptions?.(false);
+        }
+      })();
+    }, [refetchOptions, setRefetchOptions]);
 
     return (
       <Select

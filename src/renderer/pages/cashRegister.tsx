@@ -42,6 +42,8 @@ function CashRegisterPage() {
   >({});
   const [productsSrc, setProductsSrc] = useState<Record<string, Product>>({});
   const productSelectRef = useRef<SelectInstance<Opt> | null>(null);
+  const [refetchProductSelectOpts, setRefetchProductSelectOpts] =
+    useState(false);
   const itemKeys = useMemo(() => Object.keys(items), [items]);
   const { barcode, setBarcode } = useOutletContext<BarcodeContext>();
   const [lastUpdatedId, setLastUpdatedId] = useState('');
@@ -142,6 +144,7 @@ function CashRegisterPage() {
           setPaymentAmount('');
           setItems({});
           setHasItems(false);
+          setRefetchProductSelectOpts(true);
         }, [setHasItems])}
         onExited={useCallback(() => {
           setTimeout(() => productSelectRef.current?.focus(), 50);
@@ -155,6 +158,8 @@ function CashRegisterPage() {
           inputValue={selectInputValue}
           onInputChange={setSelectInputValue}
           onSelect={handleSelect}
+          refetchOptions={refetchProductSelectOpts}
+          setRefetchOptions={setRefetchProductSelectOpts}
         />
         <Row className="my-3">
           <Col lg="8" style={{ position: 'relative' }}>
