@@ -62,6 +62,8 @@ const LaundryRegisterPage = () => {
   const [addOnItems, setAddOnItems] = useState<
     Record<string, Product & { totalPrice: number }>
   >({});
+  const [refetchProductSelectOpts, setRefetchProductSelectOpts] =
+    useState(false);
   const [productsSrc, setProductsSrc] = useState<Record<string, Product>>({});
   const [selectedItem, setSelectedItem] = useState<Product | undefined>(); // add on item to edit
   const [lastUpdatedId, setLastUpdatedId] = useState('');
@@ -232,6 +234,7 @@ const LaundryRegisterPage = () => {
     setAddOnItems({});
     setPaymentAmount('');
     setIsPaid(true);
+    setRefetchProductSelectOpts(true);
   };
 
   useEffect(() => {
@@ -348,6 +351,8 @@ const LaundryRegisterPage = () => {
                     inputValue={productSelectInputValue}
                     onInputChange={setProductSelectInputValue}
                     onSelect={handleProductSelect}
+                    refetchOptions={refetchProductSelectOpts}
+                    setRefetchOptions={setRefetchProductSelectOpts}
                   />
                 </FormGroup>
               </Col>

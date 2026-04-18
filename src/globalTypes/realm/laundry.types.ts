@@ -43,11 +43,10 @@ export type LaundryGetFilter = {
   service: string;
   startDate?: Date | null;
   endDate?: Date | null;
-  // dropOffDate?: Date | null;
-  // claimedDate?: Date | null;
   isPaid: string;
   isClaimed: string;
   limit?: number;
+  dateFilter: 'claimedDate' | 'dropOffDate'
 }
 
 
@@ -59,8 +58,7 @@ export type LaundryPaginatedGetFilter = {
   service: string;
   startDate?: Date | null;
   endDate?: Date | null;
-  // dropOffDate?: Date | null;
-  // claimedDate?: Date | null;
   isPaid: string;
   isClaimed: string;
+  dateFilter: 'claimedDate' | 'dropOffDate'
 }
