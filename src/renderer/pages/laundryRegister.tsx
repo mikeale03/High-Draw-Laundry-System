@@ -11,7 +11,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import {
@@ -36,11 +35,30 @@ import AddOnItemsTable from 'renderer/components/laundryRegister/addOnItemsTable
 import PaymentCard from 'renderer/components/laundryRegister/paymentCard';
 import SubmitConfirmationModal from 'renderer/components/laundryRegister/submitConfirmationModal';
 import UserContext from 'renderer/context/userContext';
-import { createLaundry } from 'renderer/service/laundry';
+import {
+  createLaundry,
+  updatePickupDeliveryLaundry,
+} from 'renderer/service/laundry';
 import { twoDecimals } from 'renderer/utils/helper';
-import { laundryServicePriceRecord } from 'globalUtils/constants';
+import {
+  deliveryChargeRecord,
+  laundryServicePriceRecord,
+} from 'globalUtils/constants';
+import {
+  DeliveryStatus,
+  Laundry,
+  LaundryService,
+} from 'globalTypes/realm/laundry.types';
+import ServiceOptions from 'renderer/components/laundryRegister/serviceOptions';
+import { useLocation } from 'react-router-dom';
 
 let keyCtr = 1;
+
+const checkIsDeliveryService = (service: LaundryService) =>
+  service === 'pickup and delivery' || service === 'pickup only';
+
+const checkIsSelfService = (service: LaundryService) =>
+  service === 'wash and dry' || service === 'wash only';
 
 const LaundryRegisterPage = () => {
   const [loads, setLoads] = useState<
@@ -49,12 +67,7 @@ const LaundryRegisterPage = () => {
       value: number | string;
     }[]
   >([{ key: 1, value: '' }]);
-  const [service, setService] = useState<
-    'drop-off' | 'wash and dry' | 'wash only'
-  >('drop-off');
-  const [selfServiceType, setSelfServiceType] = useState<
-    'wash and dry' | 'wash only'
-  >('wash and dry');
+  const [service, setService] = useState<LaundryService>('drop-off');
   const [productSelectInputValue, setProductSelectInputValue] = useState('');
   const [showInputQuantityModal, setShowInputQuantityModal] = useState(false);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
@@ -74,13 +87,14 @@ const LaundryRegisterPage = () => {
   const [isPaid, setIsPaid] = useState(true);
   // const [payment, setPayment] = useState<'cash' | 'gcash'>('cash');
   const [paymentAmount, setPaymentAmount] = useState('');
-  const dropOffOptionRef = useRef<HTMLDivElement>(null);
   const { user } = useContext(UserContext);
-
+  const { state } = useLocation();
+  const laundryEdit = state as Laundry;
   const itemsKeys = Object.keys(addOnItems);
   const addOnsQty = itemsKeys.length;
   const servicePrice = laundryServicePriceRecord[service];
   const totalServicePrice = twoDecimals(loads.length * servicePrice);
+  const isShowLoads = !!laundryEdit || !checkIsDeliveryService(service);
 
   const addOnsPrice = useMemo(() => {
     let t = 0;
@@ -90,7 +104,13 @@ const LaundryRegisterPage = () => {
     return twoDecimals(t);
   }, [itemsKeys, addOnItems]);
 
-  const subTotal = twoDecimals(addOnsPrice + totalServicePrice);
+  const deliveryCharge = checkIsDeliveryService(service)
+    ? deliveryChargeRecord[service]
+    : 0;
+
+  const subTotal = twoDecimals(
+    addOnsPrice + totalServicePrice + deliveryCharge
+  );
 
   const handleAddLoad = () => {
     setLoads([...loads, { key: ++keyCtr, value: '' }]);
@@ -183,43 +203,82 @@ const LaundryRegisterPage = () => {
     setShowSubmitConfirmation(true);
   };
 
-  const handleSelectSelfService = () => {
-    setService(selfServiceType);
-    setIsPaid(true);
-    setPaymentAmount('');
-  };
+  // const handleSelectSelfService = () => {
+  //   setService(selfServiceType);
+  //   setIsPaid(true);
+  //   setPaymentAmount('');
+  // };
 
-  const handleSelectSelfServiceOption = (
-    option: 'wash and dry' | 'wash only'
-  ) => {
-    setSelfServiceType(option);
-    setService(option);
+  // const handleSelectSelfServiceOption = (
+  //   option: 'wash and dry' | 'wash only'
+  // ) => {
+  //   setSelfServiceType(option);
+  //   setService(option);
+  // };
+
+  const handleServiceSelect = (ser: LaundryService) => {
+    if (checkIsDeliveryService(ser)) {
+      setIsPaid(false);
+      setLoads([]);
+    } else if (checkIsDeliveryService(service)) {
+      setLoads([{ key: 1, value: '' }]);
+    }
+    if (checkIsSelfService(ser)) {
+      setIsPaid(true);
+    }
+    setPaymentAmount('');
+    setService(ser);
   };
 
   const handleConfirm = async (payment: 'cash' | 'gcash') => {
     if (!user) return;
-    const { isSuccess, message } = await createLaundry({
-      service,
-      servicePrice,
-      customer,
-      customerNumber,
-      loads: loads.map((v) => +v.value),
-      addOns: Object.values(addOnItems).map((v) => ({
-        productId: v._id,
-        productName: v.name,
-        quantity: v.quantity,
-        price: v.price,
-        totalPrice: v.totalPrice,
-      })),
-      addOnsPrice,
-      isPaid,
-      payment: isPaid ? payment : undefined,
-      totalAmount: subTotal,
-      dropOffDate: new Date(),
-      transactBy: user.username,
-      transactById: user._id,
-      transactionId: uuid(),
-    });
+    const { isSuccess, message } = laundryEdit
+      ? await updatePickupDeliveryLaundry({
+          _id: laundryEdit._id,
+          service,
+          loads: loads.map((v) => +v.value),
+          addOns: Object.values(addOnItems).map((v) => ({
+            productId: v._id,
+            productName: v.name,
+            quantity: v.quantity,
+            price: v.price,
+            totalPrice: v.totalPrice,
+          })),
+          addOnsPrice,
+          deliveryCharge,
+          deliveryStatus: 'on process',
+          isPaid,
+          payment: isPaid ? payment : undefined,
+          totalAmount: subTotal,
+          transactBy: user.username,
+          transactById: user._id,
+        })
+      : await createLaundry({
+          service,
+          servicePrice,
+          customer,
+          customerNumber,
+          loads: loads.map((v) => +v.value),
+          addOns: Object.values(addOnItems).map((v) => ({
+            productId: v._id,
+            productName: v.name,
+            quantity: v.quantity,
+            price: v.price,
+            totalPrice: v.totalPrice,
+          })),
+          addOnsPrice,
+          deliveryCharge,
+          deliveryStatus: checkIsDeliveryService(service)
+            ? 'for pickup'
+            : undefined,
+          isPaid,
+          payment: isPaid ? payment : undefined,
+          totalAmount: subTotal,
+          dropOffDate: new Date(),
+          transactBy: user.username,
+          transactById: user._id,
+          transactionId: uuid(),
+        });
 
     if (!isSuccess) {
       toast.error(message);
@@ -238,8 +297,26 @@ const LaundryRegisterPage = () => {
   };
 
   useEffect(() => {
-    dropOffOptionRef.current?.focus();
-  }, []);
+    console.log(laundryEdit);
+    if (laundryEdit) {
+      const { customer: c, customerNumber: cn, service: s } = laundryEdit;
+      setCustomer(c);
+      setCustomerSelectValue({
+        label: `${c} ${cn && `- cell#: ${cn}`}`,
+        value: c,
+        customer: c as any,
+      });
+      setService(s);
+    } else {
+      setCustomer('');
+      setCustomerSelectValue(null);
+      setAddOnItems({});
+      setPaymentAmount('');
+      setIsPaid(true);
+      setService('drop-off');
+      setLoads([{ key: 1, value: '' }]);
+    }
+  }, [laundryEdit]);
 
   return (
     <div className="p-3">
@@ -263,192 +340,208 @@ const LaundryRegisterPage = () => {
         onConfirm={handleConfirm}
       />
 
-      <h3>Laundry Register</h3>
+      <h3>{laundryEdit ? 'Pickup And Delivery Update' : 'Laundry Register'}</h3>
 
       <Form onSubmit={handleSubmitForm}>
         <Row>
           <Col lg="8">
-            <div className="d-flex mb-3">
-              <div
-                ref={dropOffOptionRef}
-                className={`cursor-pointer rounded-4 bg-white me-3 py-2 px-5 transition-all
-              ${
-                service === 'drop-off' ? 'border border-primary' : 'text-muted'
-              }`}
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setService('drop-off')}
-                style={{ width: '250px' }}
-                onClick={() => setService('drop-off')}
-              >
-                <p className="m-0">P{laundryServicePriceRecord['drop-off']}</p>
-                <h5 className="m-0">DROP-OFF</h5>
-              </div>
-              <div
-                className={`cursor-pointer rounded-4 bg-white me-3 py-2 px-5 transition-all
-              ${
-                service !== 'drop-off' ? 'border border-primary' : 'text-muted'
-              }`}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSelectSelfService();
-                  }
-                }}
-                style={{ width: '250px' }}
-                onClick={handleSelectSelfService}
-              >
-                <p className="m-0">
-                  P{laundryServicePriceRecord[selfServiceType]}
-                </p>
-                <h5 className="m-0">SELF-SERVICE</h5>
-              </div>
-            </div>
+            {!laundryEdit && (
+              <ServiceOptions
+                service={service}
+                onSelect={handleServiceSelect}
+                deliveryOnly={!!laundryEdit}
+              />
+            )}
 
-            {loads.map((v, i) => (
-              <div key={`${v.key}`} className="d-flex align-items-center mb-2">
-                <span>Load #{i + 1} Wt: </span>
-                <FormControl
-                  size="sm"
-                  className="text-center ms-1 no-arrow-input"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  style={{ width: '60px' }}
-                  required
-                  value={v.value}
-                  onChange={(e) =>
-                    handleLoadChange({ key: v.key, value: e.target.value })
-                  }
-                />
-                <span className="ms-1 me-3">kg</span>
-                {i > 0 && (
-                  <FontAwesomeIcon
-                    icon={faXmark}
-                    className="cursor-pointer text-secondary"
-                    onClick={() => handleDeleteLoad(v.key)}
-                  />
-                )}
-              </div>
-            ))}
-            <div>
-              <Button onClick={handleAddLoad}>Add load</Button>
-            </div>
-            <div className="mt-3 me-3">
+            {isShowLoads && (
+              <>
+                {loads.map((v, i) => (
+                  <div
+                    key={`${v.key}`}
+                    className="d-flex align-items-center mt-2 mb-2"
+                  >
+                    <span>Load #{i + 1} Wt: </span>
+                    <FormControl
+                      size="sm"
+                      className="text-center ms-1 no-arrow-input"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      style={{ width: '60px' }}
+                      required
+                      value={v.value}
+                      onChange={(e) =>
+                        handleLoadChange({
+                          key: v.key,
+                          value: e.target.value,
+                        })
+                      }
+                    />
+                    <span className="ms-1 me-3">kg</span>
+                    {i > 0 && (
+                      <FontAwesomeIcon
+                        icon={faXmark}
+                        className="cursor-pointer text-secondary"
+                        onClick={() => handleDeleteLoad(v.key)}
+                      />
+                    )}
+                  </div>
+                ))}
+                <div>
+                  <Button onClick={handleAddLoad}>Add load</Button>
+                </div>
+              </>
+            )}
+            <div className="my-3 me-3">
               <FormGroup>
                 <FormLabel className="fw-bold">Customer</FormLabel>
                 <CustomerSelect
                   value={customerSelectValue}
                   onSelect={handleCustomerSelect}
+                  disabled={!!laundryEdit}
                 />
               </FormGroup>
             </div>
-
-            <Row className="my-3 me-3">
-              <Col lg="8">
-                <FormGroup>
-                  <FormLabel className="fw-bold">Add-Ons</FormLabel>
-                  <ProductsSelect
-                    inputValue={productSelectInputValue}
-                    onInputChange={setProductSelectInputValue}
-                    onSelect={handleProductSelect}
-                    refetchOptions={refetchProductSelectOpts}
-                    setRefetchOptions={setRefetchProductSelectOpts}
-                  />
+            <div className="d-flex">
+              {checkIsDeliveryService(service) && (
+                <FormGroup className="me-5">
+                  <FormLabel className="fw-bold">
+                    Pickup and Delivery Option
+                  </FormLabel>
+                  <div className="d-flex">
+                    <div onClick={() => setService('pickup and delivery')}>
+                      <FormCheck
+                        className="me-3"
+                        label="Pickup and Delivery"
+                        type="radio"
+                        checked={service === 'pickup and delivery'}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setService('pickup and delivery');
+                          }
+                        }}
+                      />
+                    </div>
+                    <div onClick={() => setService('pickup only')}>
+                      <FormCheck
+                        label="Pickup Only"
+                        type="radio"
+                        checked={service === 'pickup only'}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setService('pickup only');
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
                 </FormGroup>
-              </Col>
-              <Col lg="4">
-                {service === 'drop-off' ? (
-                  <FormGroup>
-                    <FormLabel className="fw-bold">Payment</FormLabel>
-                    <div className="d-flex p-2">
-                      <div onClick={() => setIsPaid(true)}>
-                        <FormCheck
-                          className="me-3"
-                          label={
-                            <span className="cursor-pointer">On Drop-Off</span>
-                          }
-                          name="group1"
-                          type="radio"
-                          checked={isPaid}
-                          onChange={(e) => {
-                            setIsPaid(e.target.checked);
-                            setPaymentAmount('');
-                          }}
-                        />
-                      </div>
-                      <div onClick={() => setIsPaid(false)}>
-                        <FormCheck
-                          label={
-                            <span className="cursor-pointer">On Claim</span>
-                          }
-                          name="group1"
-                          type="radio"
-                          checked={!isPaid}
-                          onChange={(e) => {
-                            setIsPaid(!e.target.checked);
-                            setPaymentAmount('');
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </FormGroup>
-                ) : (
-                  <FormGroup>
-                    <FormLabel className="fw-bold">
-                      Self-Service Option
-                    </FormLabel>
-                    <div className="d-flex p-2">
-                      <div
-                        onClick={() =>
-                          handleSelectSelfServiceOption('wash and dry')
+              )}
+              {(service === 'drop-off' ||
+                (laundryEdit && !checkIsSelfService(service))) && (
+                <FormGroup className="me-5">
+                  <FormLabel className="fw-bold">Payment</FormLabel>
+                  <div className="d-flex">
+                    <div onClick={() => setIsPaid(true)}>
+                      <FormCheck
+                        className="me-3"
+                        label={
+                          <span className="cursor-pointer">
+                            {checkIsDeliveryService(service)
+                              ? 'On Pickup'
+                              : 'On Drop-Off'}
+                          </span>
                         }
-                      >
-                        <FormCheck
-                          className="me-3"
-                          label="Wash And Dry"
-                          type="radio"
-                          checked={service === 'wash and dry'}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelfServiceType('wash and dry');
-                              setService('wash and dry');
-                            }
-                          }}
-                        />
-                      </div>
-                      <div
-                        onClick={() =>
-                          handleSelectSelfServiceOption('wash only')
-                        }
-                      >
-                        <FormCheck
-                          label="Wash Only"
-                          type="radio"
-                          checked={service === 'wash only'}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelfServiceType('wash only');
-                              setService('wash only');
-                            }
-                          }}
-                        />
-                      </div>
+                        name="group1"
+                        type="radio"
+                        checked={isPaid}
+                        onChange={(e) => {
+                          setIsPaid(e.target.checked);
+                          setPaymentAmount('');
+                        }}
+                      />
                     </div>
+                    <div onClick={() => setIsPaid(false)}>
+                      <FormCheck
+                        label={
+                          <span className="cursor-pointer">
+                            {service === 'pickup and delivery'
+                              ? 'On Delivery'
+                              : 'On Claim'}
+                          </span>
+                        }
+                        name="group1"
+                        type="radio"
+                        checked={!isPaid}
+                        onChange={(e) => {
+                          setIsPaid(!e.target.checked);
+                          setPaymentAmount('');
+                        }}
+                      />
+                    </div>
+                  </div>
+                </FormGroup>
+              )}
+              {checkIsSelfService(service) && (
+                <FormGroup>
+                  <FormLabel className="fw-bold">Self-Service Option</FormLabel>
+                  <div className="d-flex">
+                    <div onClick={() => setService('wash and dry')}>
+                      <FormCheck
+                        className="me-3"
+                        label="Wash And Dry"
+                        type="radio"
+                        checked={service === 'wash and dry'}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setService('wash and dry');
+                          }
+                        }}
+                      />
+                    </div>
+                    <div onClick={() => setService('wash and dry')}>
+                      <FormCheck
+                        label="Wash Only"
+                        type="radio"
+                        checked={service === 'wash only'}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setService('wash only');
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </FormGroup>
+              )}
+            </div>
+            {(laundryEdit || !checkIsDeliveryService(service)) && (
+              <>
+                <div className="my-3 me-3">
+                  <FormGroup>
+                    <FormLabel className="fw-bold">Add-Ons</FormLabel>
+                    <ProductsSelect
+                      inputValue={productSelectInputValue}
+                      onInputChange={setProductSelectInputValue}
+                      onSelect={handleProductSelect}
+                      refetchOptions={refetchProductSelectOpts}
+                      setRefetchOptions={setRefetchProductSelectOpts}
+                    />
                   </FormGroup>
-                )}
-              </Col>
-            </Row>
-            <Card style={{ minHeight: '200px' }}>
-              <Card.Body>
-                <AddOnItemsTable
-                  lastUpdatedId={lastUpdatedId}
-                  items={addOnItems}
-                  onShowInputQuantityModal={handleShowQuantityInputModal}
-                  productsSrc={productsSrc}
-                  onDelete={handleDeleteItem}
-                />
-              </Card.Body>
-            </Card>
+                </div>
+                <Card className="mt-3" style={{ minHeight: '200px' }}>
+                  <Card.Body>
+                    <AddOnItemsTable
+                      lastUpdatedId={lastUpdatedId}
+                      items={addOnItems}
+                      onShowInputQuantityModal={handleShowQuantityInputModal}
+                      productsSrc={productsSrc}
+                      onDelete={handleDeleteItem}
+                    />
+                  </Card.Body>
+                </Card>
+              </>
+            )}
           </Col>
           <Col lg="4">
             <PaymentCard

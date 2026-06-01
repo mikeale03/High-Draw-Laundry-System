@@ -1,5 +1,5 @@
 import { LaundryChannels } from 'globalTypes/channels/laundryChannels';
-import { Laundry, LaundryClaimData, LaundryCreateData, LaundryGetFilter } from 'globalTypes/realm/laundry.types';
+import { DeliveryStatus, Laundry, LaundryClaimData, LaundryCreateData, LaundryGetFilter, LaundryUpdatePickupDeliveryData } from 'globalTypes/realm/laundry.types';
 import { Response } from 'globalTypes/realm/response.types';
 
 const {
@@ -30,10 +30,27 @@ export const claimLaundry = async (params: LaundryClaimData) => {
   return response;
 };
 
+export const updateDeliveryStatus = async (_id: string, status: DeliveryStatus, transactBy: string, transactById: string) => {
+  const response = await ipcRenderer.invoke<Response<Laundry>>(
+    LaundryChannels.status,
+    _id, status, transactBy, transactById
+  );
+  return response;
+};
+
 export const setPackingQuantity = async (_id: string, quantity: number) => {
   const response = await ipcRenderer.invoke<Response<Laundry>>(
     LaundryChannels.packing,
     _id, quantity
+  );
+  return response;
+};
+
+
+export const updatePickupDeliveryLaundry = async (params: LaundryUpdatePickupDeliveryData) => {
+  const response = await ipcRenderer.invoke<Response<Laundry>>(
+    LaundryChannels.updateDelivery,
+    params
   );
   return response;
 };

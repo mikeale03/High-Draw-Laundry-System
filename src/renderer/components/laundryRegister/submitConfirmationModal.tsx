@@ -3,6 +3,7 @@ import { Button, Col, Modal, Row } from 'react-bootstrap';
 import { pesoFormat } from 'renderer/utils/helper';
 import { Laundry } from 'globalTypes/realm/laundry.types';
 import ConfirmationModal from '../common/modals/confirmation';
+import { checkIsDeliveryService } from './serviceOptions';
 
 type Props = {
   show: boolean;
@@ -41,7 +42,15 @@ const SubmitConfirmationModal = ({
   };
 
   const change = paymentAmount - subTotal;
-  const paymentDisplay = isPaid ? 'On Drop-Off' : 'On Claim';
+  const isDeliveryService = checkIsDeliveryService(service);
+  // eslint-disable-next-line no-nested-ternary
+  const paymentDisplay = isPaid
+    ? isDeliveryService
+      ? 'On Pickup'
+      : 'On Drop-Off'
+    : service === 'pickup and delivery'
+    ? 'On Delivery'
+    : 'On Claim';
 
   const handleShowGcashConfirmation = () => {
     onHide();

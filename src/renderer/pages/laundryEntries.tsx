@@ -3,14 +3,22 @@ import { faTrashCan } from '@fortawesome/free-regular-svg-icons';
 import {
   faPenToSquare,
   faPersonWalkingLuggage,
+  faTruck,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { format } from 'date-fns';
 import {
+  DeliveryStatus,
   Laundry,
   LaundryPaginatedGetFilter,
 } from 'globalTypes/realm/laundry.types';
-import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import {
+  ChangeEvent,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import {
   Button,
   Card,
@@ -20,10 +28,17 @@ import {
   Row,
   Table,
 } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import DeliveryStatusUpdateModal from 'renderer/components/laundryEntries/deliveryStatusUpdateModal';
 import LaundryEntriesConfirmationModal from 'renderer/components/laundryEntries/laundryEntriesConfirmation';
 import LaundryEntriesFilter from 'renderer/components/laundryEntries/laundryEntriesFilter';
-import { getLaundries, setPackingQuantity } from 'renderer/service/laundry';
+import UserContext from 'renderer/context/userContext';
+import {
+  getLaundries,
+  setPackingQuantity,
+  updateDeliveryStatus,
+} from 'renderer/service/laundry';
 import useLaundryFilterStore from 'renderer/store/filtersStore/laundryFilterStore';
 import { debounce, pesoFormat } from 'renderer/utils/helper';
 
@@ -40,6 +55,7 @@ const displayLaundries = (
 const LaundryEntriesPage = () => {
   const [laundries, setLaundries] = useState<Laundry[]>([]);
   const [confirmationModal, setConfirmationModal] = useState(false);
+  const [deliveryStatusModal, setDeliveryStatusModal] = useState(false);
   const [confimationAction, setConfimationAction] = useState<
     'delete' | 'claim'
   >('delete');
@@ -47,6 +63,8 @@ const LaundryEntriesPage = () => {
   const [selectedLaundry, setSelectedLaundry] = useState<Laundry | undefined>();
   const [hasNextPage, setHasNextPage] = useState(false);
   const [packingQty, setPackingQty] = useState<string | number>(1);
+  const navigate = useNavigate();
+  const { user } = useContext(UserContext);
 
   const [totals, setTotals] = useState({
     loads: 0,
@@ -64,7 +82,7 @@ const LaundryEntriesPage = () => {
     // const limit = pageNumber * pageSize + 1;
 
     const { isSuccess, result, message } = await getLaundries(filter);
-
+    console.log(result);
     if (isSuccess && result) {
       const t = { loads: 0, amount: 0 };
       for (const item of result) {
@@ -124,6 +142,11 @@ const LaundryEntriesPage = () => {
     setPackingQuantiyModal(true);
   };
 
+  const handleShowDeliveryStatusModal = async (laundry: Laundry) => {
+    setSelectedLaundry(laundry);
+    setDeliveryStatusModal(true);
+  };
+
   const handleSetPackingQuantity = async () => {
     if (!selectedLaundry) return;
     const { isSuccess, message } = await setPackingQuantity(
@@ -144,6 +167,33 @@ const LaundryEntriesPage = () => {
     }
   };
 
+  const handleUpdateDeliveryStatus = async (
+    status: DeliveryStatus,
+    isUndo?: boolean
+  ) => {
+    if (!selectedLaundry || !user) return;
+    if (status === 'on process' && !isUndo) {
+      navigate('/home/laundry-register', {
+        state: selectedLaundry,
+      });
+    }
+    const { isSuccess, message, result } = await updateDeliveryStatus(
+      selectedLaundry._id,
+      status,
+      user.username,
+      user._id
+    );
+
+    if (isSuccess && result) {
+      const newLaundries = laundries.map((item) =>
+        item._id === selectedLaundry._id ? result : item
+      );
+      setLaundries(newLaundries);
+    } else {
+      toast.error(message);
+    }
+  };
+
   useEffect(() => {
     handleGetLaundries();
   }, [handleGetLaundries]);
@@ -156,6 +206,12 @@ const LaundryEntriesPage = () => {
         selectedLaundry={selectedLaundry}
         action={confimationAction}
         onConfirm={handleConfirm}
+      />
+      <DeliveryStatusUpdateModal
+        show={deliveryStatusModal}
+        toggle={setDeliveryStatusModal}
+        status={selectedLaundry?.deliveryStatus}
+        onConfirm={handleUpdateDeliveryStatus}
       />
 
       <Modal
@@ -224,6 +280,7 @@ const LaundryEntriesPage = () => {
           <Table responsive>
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Customer</th>
                 <th>Service</th>
                 <th>Loads</th>
@@ -233,6 +290,7 @@ const LaundryEntriesPage = () => {
                 <th>Total Amount</th>
                 <th>Packing Qty</th>
                 <th>Paid</th>
+                <th>Delivery Status</th>
                 <th>Claimed Date</th>
                 <th>Claimed By</th>
                 <th>Transact By</th>
@@ -242,6 +300,7 @@ const LaundryEntriesPage = () => {
             <tbody>
               {laundries.map((item) => (
                 <tr key={item._id}>
+                  <td title={item.customerNumber}>{item.laundryId}</td>
                   <td title={item.customerNumber}>{item.customer}</td>
                   <td>{item.service}</td>
                   <td>
@@ -259,6 +318,7 @@ const LaundryEntriesPage = () => {
                   <td>{pesoFormat(item.totalAmount)}</td>
                   <td>{item.packingQty.toLocaleString()}</td>
                   <td>{item.isPaid ? 'Yes' : 'No'}</td>
+                  <td className="text-capitalize">{item.deliveryStatus}</td>
                   <td>
                     {item.claimedDate &&
                       format(item.claimedDate, 'MM/dd/yyyy hh:mm aaa')}
@@ -266,26 +326,41 @@ const LaundryEntriesPage = () => {
                   <td>{item.claimedBy}</td>
                   <td>{item.transactBy}</td>
                   <td>
-                    <FontAwesomeIcon
-                      icon={faPenToSquare}
-                      title="Update Packing Quantity"
-                      size="xl"
-                      className="me-2 cursor-pointer"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleShowPackingModal(item)}
-                    />
-                    {!item.claimedDate && (
+                    {item.deliveryStatus !== 'for pickup' && (
                       <FontAwesomeIcon
-                        icon={faPersonWalkingLuggage}
-                        title="Claim"
+                        icon={faPenToSquare}
+                        title="Update Packing Quantity"
                         size="xl"
                         className="me-2 cursor-pointer"
                         role="button"
                         tabIndex={0}
-                        onClick={() => handleClaimConfirmation(item)}
+                        onClick={() => handleShowPackingModal(item)}
                       />
                     )}
+                    {item.deliveryStatus !== 'for pickup' &&
+                      !item.claimedDate && (
+                        <FontAwesomeIcon
+                          icon={faPersonWalkingLuggage}
+                          title="Claim"
+                          size="xl"
+                          className="me-2 cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleClaimConfirmation(item)}
+                        />
+                      )}
+                    {item.deliveryStatus !== 'completed' &&
+                      !item.claimedDate && (
+                        <FontAwesomeIcon
+                          icon={faTruck}
+                          title="Update Delivery Status"
+                          size="xl"
+                          className="me-2 cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleShowDeliveryStatusModal(item)}
+                        />
+                      )}
                     <FontAwesomeIcon
                       icon={faTrashCan}
                       title="Delete"

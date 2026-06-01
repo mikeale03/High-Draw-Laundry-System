@@ -1,8 +1,10 @@
 /* eslint-disable react/no-unstable-nested-components */
 import { Laundry } from 'globalTypes/realm/laundry.types';
+import { deliveryChargeRecord } from 'globalUtils/constants';
 import { memo, ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { Button, Card, Col, Form, Row } from 'react-bootstrap';
 import { pesoFormat } from 'renderer/utils/helper';
+import { checkIsDeliveryService } from './serviceOptions';
 
 type Props = {
   loadQty: number;
@@ -26,7 +28,15 @@ const PaymentCard = ({
   paymentAmount,
   setPaymentAmount,
 }: Props) => {
-  const paymentDisplay = isPaid ? 'On Drop-Off' : 'On Claim';
+  const isDeliveryService = checkIsDeliveryService(service);
+  // eslint-disable-next-line no-nested-ternary
+  const paymentDisplay = isPaid
+    ? isDeliveryService
+      ? 'On Pickup'
+      : 'On Drop-Off'
+    : service === 'pickup and delivery'
+    ? 'On Delivery'
+    : 'On Claim';
 
   const handlePaymentChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPaymentAmount(e.target.value);
@@ -45,36 +55,49 @@ const PaymentCard = ({
           <Col xs="6">
             <p className="m-0 mb-1 text-end">{customer}</p>
           </Col>
-
-          <Col xs="6">loads:</Col>
-          <Col xs="6">
-            <p className="m-0 mb-1 text-end">{loadQty}</p>
-          </Col>
-
-          <Col xs="6">add-ons:</Col>
-          <Col xs="6">
-            <p className="m-0 mb-1 text-end">{addOnsQty}</p>
-          </Col>
-
-          <Col xs="6">payment:</Col>
-          <Col xs="6">
-            <p className="m-0 mb-1 text-end">{paymentDisplay}</p>
-          </Col>
-
-          <Col xs="6">subtotal:</Col>
-          <Col xs="6">
-            <p className="m-0  mb-1 text-end">
-              <strong>{pesoFormat(subTotal)}</strong>
-            </p>
-          </Col>
-          {isPaid && (
+          {checkIsDeliveryService(service) && (
             <>
-              <Col xs="6">payment amount:</Col>
+              <Col xs="6">delivery charge:</Col>
               <Col xs="6">
-                <p className="m-0  mb-1 text-end">
-                  {pesoFormat(+paymentAmount)}
+                <p className="m-0 mb-1 text-end">
+                  {pesoFormat(deliveryChargeRecord[service])}
                 </p>
               </Col>
+            </>
+          )}
+          {loadQty > 0 && (
+            <>
+              <Col xs="6">loads:</Col>
+              <Col xs="6">
+                <p className="m-0 mb-1 text-end">{loadQty}</p>
+              </Col>
+
+              <Col xs="6">add-ons:</Col>
+              <Col xs="6">
+                <p className="m-0 mb-1 text-end">{addOnsQty}</p>
+              </Col>
+
+              <Col xs="6">payment:</Col>
+              <Col xs="6">
+                <p className="m-0 mb-1 text-end">{paymentDisplay}</p>
+              </Col>
+
+              <Col xs="6">subtotal:</Col>
+              <Col xs="6">
+                <p className="m-0  mb-1 text-end">
+                  <strong>{pesoFormat(subTotal)}</strong>
+                </p>
+              </Col>
+              {isPaid && (
+                <>
+                  <Col xs="6">payment amount:</Col>
+                  <Col xs="6">
+                    <p className="m-0  mb-1 text-end">
+                      {pesoFormat(+paymentAmount)}
+                    </p>
+                  </Col>
+                </>
+              )}
             </>
           )}
           {/* <Col xs="6">change:</Col>

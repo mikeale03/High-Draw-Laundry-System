@@ -1,7 +1,7 @@
 import { IpcMain, IpcMainInvokeEvent } from 'electron';
-import { LaundryClaimData, LaundryCreateData, LaundryGetFilter } from '../../globalTypes/realm/laundry.types';
+import { DeliveryStatus, LaundryClaimData, LaundryCreateData, LaundryGetFilter, LaundryUpdatePickupDeliveryData } from '../../globalTypes/realm/laundry.types';
 import { LaundryChannels } from '../../globalTypes/channels/laundryChannels';
-import { claimLaundry, createLaundry, deleteLaundry, getLaundries, setPackingQuantity } from '../service/laundryRealm';
+import { claimLaundry, createLaundry, deleteLaundry, getLaundries, setDeliveryStatus, setPackingQuantity, updatePickupDeliveryLaundry } from '../service/laundryRealm';
 
 
 const setLaundryEventHandler = (ipcMain: IpcMain) => {
@@ -27,9 +27,23 @@ const setLaundryEventHandler = (ipcMain: IpcMain) => {
     }
   );
   ipcMain.handle(
+    LaundryChannels.status,
+    async (event: IpcMainInvokeEvent, _id: string, status: DeliveryStatus, transactBy: string, transactById: string) => {
+      const result = await setDeliveryStatus(_id, status, transactBy, transactById);
+      return result;
+    }
+  );
+  ipcMain.handle(
     LaundryChannels.packing,
     async (event: IpcMainInvokeEvent, _id: string, quantity: number) => {
       const result = await setPackingQuantity(_id, quantity);
+      return result;
+    }
+  );
+  ipcMain.handle(
+    LaundryChannels.updateDelivery,
+    async (event: IpcMainInvokeEvent, params: LaundryUpdatePickupDeliveryData) => {
+      const result = await updatePickupDeliveryLaundry(params);
       return result;
     }
   );

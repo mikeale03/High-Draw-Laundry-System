@@ -45,9 +45,10 @@ type Props = {
         }>
       ) => void)
     | undefined;
+  disabled: boolean;
 };
 
-const CustomerSelect = ({ value, onSelect }: Props) => {
+const CustomerSelect = ({ value, onSelect, disabled }: Props) => {
   return (
     <AsyncSelect
       name="customer"
@@ -56,6 +57,7 @@ const CustomerSelect = ({ value, onSelect }: Props) => {
       defaultOptions
       value={value}
       onChange={onSelect}
+      isDisabled={disabled}
       required
     />
   );
