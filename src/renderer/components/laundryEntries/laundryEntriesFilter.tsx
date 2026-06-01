@@ -2,7 +2,10 @@ import { Col, FormLabel, FormSelect, Row } from 'react-bootstrap';
 import ReactDatePicker from 'react-datepicker';
 import { useState } from 'react';
 import useLaundryFilterStore from 'renderer/store/filtersStore/laundryFilterStore';
-import { LaundryPaginatedGetFilter } from 'globalTypes/realm/laundry.types';
+import {
+  DeliveryStatus,
+  LaundryPaginatedGetFilter,
+} from 'globalTypes/realm/laundry.types';
 import UsersSelect from '../common/selects/usersSelect';
 import ShiftSelect, { ShiftSelectProps } from '../common/selects/shiftSelect';
 
@@ -66,7 +69,7 @@ const LaundryEntriesFilter = () => {
           onSelect={(userId) => setFilter({ ...filter, userId })}
         />
       </Col>
-      <Col lg="3" className="mb-2">
+      <Col lg="2" className="mb-2">
         <FormLabel>Service</FormLabel>
         <FormSelect
           value={filter.service}
@@ -79,7 +82,7 @@ const LaundryEntriesFilter = () => {
         </FormSelect>
       </Col>
 
-      <Col lg="3" className="mb-2">
+      <Col lg="2" className="mb-2">
         <FormLabel>Paid</FormLabel>
         <FormSelect
           value={filter.isPaid}
@@ -90,7 +93,7 @@ const LaundryEntriesFilter = () => {
           <option value="no">No</option>
         </FormSelect>
       </Col>
-      <Col lg="3" className="mb-2">
+      <Col lg="2" className="mb-2">
         <FormLabel>Claimed</FormLabel>
         <FormSelect
           value={filter.isClaimed}
@@ -99,6 +102,24 @@ const LaundryEntriesFilter = () => {
           <option value="">All</option>
           <option value="yes">Yes</option>
           <option value="no">No</option>
+        </FormSelect>
+      </Col>
+      <Col lg="3" className="mb-2">
+        <FormLabel>Delivery Status</FormLabel>
+        <FormSelect
+          value={filter.deliveryStatus}
+          onChange={(e) =>
+            handleFilterChange({
+              deliveryStatus: e.target.value as DeliveryStatus,
+            })
+          }
+        >
+          <option value="">All</option>
+          <option value="for pickup">For Pickup</option>
+          <option value="on process">On Process</option>
+          <option value="pending delivery">Pending Delivery</option>
+          <option value="dispatched">Dispatched</option>
+          <option value="completed">Completed</option>
         </FormSelect>
       </Col>
       <Col lg="3" className="mb-3">

@@ -27,7 +27,7 @@ function ShiftSelect({ startDate, endDate, onSelect }: ShiftSelectProps) {
   shiftCStart = startDate ? new Date(startDate) : shiftCStart;
   shiftCStart.setHours(16, 0, 0, 0);
   shiftCEnd = endDate ? new Date(endDate) : shiftCEnd;
-  shiftCEnd.setHours(9, 59, 59, 999);
+  shiftCEnd.setHours(21, 59, 59, 999);
 
   useEffect(() => {
     if (

@@ -22,7 +22,8 @@ const useLaundryFilterStore = create<State>((set) => ({
     endDate: null,
     isPaid: '',
     isClaimed: '',
-    dateFilter: 'dropOffDate'
+    dateFilter: 'dropOffDate',
+    deliveryStatus: '',
   },
   setState: (update) =>
     set((state) => ({ state: { ...state.state, ...update } })),

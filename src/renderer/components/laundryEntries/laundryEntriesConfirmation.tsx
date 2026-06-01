@@ -20,7 +20,7 @@ export type Props = {
   onConfirm: (laundry?: Laundry) => void;
   onCancel?: () => void;
   onExited?: () => void;
-  action: 'delete' | 'claim';
+  action: 'delete' | 'claim' | 'completed';
   selectedLaundry?: Laundry;
 };
 

@@ -52,6 +52,7 @@ const AddExpenseModal = ({ show, toggle, onSuccess }: Props) => {
       description: expense.description,
       transact_by: user.username,
       transact_by_user_id: user._id,
+      status: 'unpaid',
     });
 
     if (response.isSuccess && response.result) {

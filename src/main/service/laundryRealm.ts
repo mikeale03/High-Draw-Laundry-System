@@ -1,14 +1,21 @@
 import Realm, { ObjectSchema } from 'realm';
+import { format } from 'date-fns';
 import {
+  DeliveryStatus,
   Laundry,
   LaundryClaimData,
   LaundryCreateData,
   LaundryGetFilter,
+  LaundryUpdatePickupDeliveryData,
 } from '../../globalTypes/realm/laundry.types';
 import { create } from './realm';
-import { createSales, openSalesRealm, Sales } from './salesRealm';
-import { laundryServicePriceRecord } from '../../globalUtils/constants';
+import { createSales, openSalesRealm, SALES, Sales } from './salesRealm';
+import {
+  deliveryChargeRecord,
+  laundryServicePriceRecord,
+} from '../../globalUtils/constants';
 import { openProductsRealm, Product, PRODUCTS } from './productsRealm';
+import { checkIsDeliveryService } from '../../globalUtils/helper';
 
 const LAUNDRY = 'Laundry';
 
@@ -31,10 +38,13 @@ export class LaundrySchema extends Realm.Object<Laundry> {
     name: LAUNDRY,
     properties: {
       _id: { type: 'objectId', default: () => new Realm.BSON.ObjectId() },
+      laundryId: { type: 'string', default: '', indexed: true },
       service: 'string',
       servicePrice: 'float',
       customer: { type: 'string', indexed: true },
       loads: 'float[]',
+      deliveryCharge: { type: 'float', default: 0 },
+      deliveryStatus: { type: 'string', default: '' },
       addOns: { type: 'list', objectType: 'AddOn' },
       addOnsPrice: 'float',
       isPaid: 'bool',
@@ -59,7 +69,7 @@ export const openLaundryRealm = async () => {
     const realm = await Realm.open({
       path: '../realm/laundry',
       schema: [LaundrySchema, AddOn],
-      schemaVersion: 2,
+      schemaVersion: 4,
     });
     return realm;
   } catch (error) {
@@ -78,10 +88,33 @@ export const createLaundry = async (data: LaundryCreateData) => {
   }
   let salesRealm: Realm | undefined;
   let productsRealm: Realm | undefined;
-  const sales: Omit<Sales, '_id'>[] = []
+  const sales: Omit<Sales, '_id'>[] = [];
   const { addOns, isPaid, payment, transactBy, transactById } = data;
+  const today = new Date();
+  let laundryId = `L${format(today, 'yyDDD')}`;
 
   try {
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    const lastLaundry = realm
+      .objects(LAUNDRY)
+      .filtered(
+        `dropOffDate >= $0 AND dropOffDate <= $1 SORT(dropOffDate DESC) LIMIT(1)`,
+        startDate,
+        endDate
+      );
+
+    if (lastLaundry.length) {
+      const { laundryId: id } = lastLaundry[0].toJSON() as Laundry;
+      const num = id ? +id.split('-')[1] : 1;
+      laundryId = `${laundryId}-${String(num).padStart(2, '0')}`;
+    } else {
+      laundryId = `${laundryId}-01`;
+    }
+
     if (addOns.length) {
       productsRealm = await openProductsRealm();
       addOns.forEach((item) => {
@@ -133,38 +166,6 @@ export const createLaundry = async (data: LaundryCreateData) => {
         product_tags: [],
         saleSource: 'laundry',
       });
-
-      // if (addOns.length) {
-      //   productsRealm = await openProductsRealm();
-
-      //   addOns.forEach((item) => {
-      //     const product = productsRealm?.objectForPrimaryKey<Product>(
-      //       PRODUCTS,
-      //       new Realm.BSON.ObjectID(item.productId)
-      //     );
-      //     if (product) {
-      //       sales.push({
-      //         product_id: 'laundry-add-on',
-      //         product_name: product.name,
-      //         product_category: product.category ?? '',
-      //         product_tags: product.tags ?? [],
-      //         quantity: item.quantity,
-      //         price: item.price,
-      //         total_price: +(item.price * item.quantity).toFixed(2),
-      //         payment,
-      //         date_created: new Date(),
-      //         transact_by: transactBy,
-      //         transact_by_user_id: transactById,
-      //         transaction_id: data.transactionId,
-      //         saleSource: 'laundry',
-      //       });
-      //       productsRealm?.write(() => {
-      //         product.quantity -= item.quantity;
-      //         product.last_transaction_date = new Date();
-      //       });
-      //     }
-      //   });
-      // }
       await createSales(sales, salesRealm);
     }
     salesRealm?.close();
@@ -182,7 +183,14 @@ export const createLaundry = async (data: LaundryCreateData) => {
   }
 
   try {
-    const task = create<LaundryCreateData>(realm, LAUNDRY, data);
+    const task = create<LaundryCreateData & { laundryId: string }>(
+      realm,
+      LAUNDRY,
+      {
+        ...data,
+        laundryId,
+      }
+    );
     const result = task?.toJSON() as Laundry;
     realm.close();
 
@@ -204,6 +212,177 @@ export const createLaundry = async (data: LaundryCreateData) => {
   }
 };
 
+export const updatePickupDeliveryLaundry = async (
+  data: LaundryUpdatePickupDeliveryData
+) => {
+  const realm = await openLaundryRealm();
+  if (!realm) {
+    return {
+      isSuccess: false,
+      message: 'Error opening realm db',
+    };
+  }
+  let salesRealm: Realm | undefined;
+  let productsRealm: Realm | undefined;
+  let laundry: (Laundry & Realm.Object<unknown, never>) | undefined | null;
+  const sales: Omit<Sales, '_id'>[] = [];
+  const {
+    addOns,
+    isPaid,
+    payment,
+    _id,
+    transactBy,
+    transactById,
+    loads,
+    totalAmount,
+    service,
+    addOnsPrice,
+    deliveryCharge,
+    deliveryStatus,
+  } = data;
+  const today = new Date();
+
+  if (!checkIsDeliveryService(service)) {
+    return {
+      isSuccess: false,
+      message: 'Invalid Service',
+    };
+  }
+
+  try {
+    laundry = realm?.objectForPrimaryKey<Laundry>(
+      LAUNDRY,
+      new Realm.BSON.ObjectID(_id)
+    );
+
+    if (!laundry) {
+      realm.close();
+      return {
+        isSuccess: false,
+        message: 'Laundry not found',
+      };
+    }
+
+    const { servicePrice } = laundry;
+    let deliveryCharge =
+      laundry.deliveryCharge || deliveryChargeRecord[service];
+
+    if (addOns.length) {
+      productsRealm = await openProductsRealm();
+      addOns.forEach((item) => {
+        const product = productsRealm?.objectForPrimaryKey<Product>(
+          PRODUCTS,
+          new Realm.BSON.ObjectID(item.productId)
+        );
+        if (product) {
+          productsRealm?.write(() => {
+            product.quantity -= item.quantity;
+            product.last_transaction_date = new Date();
+          });
+          if (isPaid && payment) {
+            sales.push({
+              product_id: 'laundry-add-on',
+              product_name: product.name,
+              product_category: product.category ?? '',
+              product_tags: product.tags ?? [],
+              quantity: item.quantity,
+              price: item.price,
+              total_price: +(item.price * item.quantity).toFixed(2),
+              payment,
+              date_created: today,
+              transact_by: transactBy,
+              transact_by_user_id: transactById,
+              transaction_id: laundry!.transactionId,
+              saleSource: 'laundry',
+            });
+          }
+        }
+      });
+    }
+    if (isPaid && payment) {
+      salesRealm = await openSalesRealm();
+      const laundryQuantity = loads.length;
+
+      sales.push({
+        product_id: `laundry-${service}`,
+        product_name: `laundry - ${service}`,
+        quantity: laundryQuantity,
+        price: servicePrice,
+        total_price: +(servicePrice * laundryQuantity).toFixed(2),
+        payment,
+        date_created: today,
+        transact_by: transactBy,
+        transact_by_user_id: transactById,
+        transaction_id: laundry.transactionId,
+        product_tags: [],
+        saleSource: 'laundry',
+      });
+      sales.push({
+        product_id: `laundry-delivery`,
+        product_name: `laundry - delivery`,
+        quantity: 1,
+        price: deliveryCharge,
+        total_price: deliveryCharge,
+        payment,
+        date_created: today,
+        transact_by: transactBy,
+        transact_by_user_id: transactById,
+        transaction_id: laundry.transactionId,
+        product_tags: [],
+        saleSource: 'laundry',
+      });
+      await createSales(sales, salesRealm);
+    }
+    salesRealm?.close();
+    productsRealm?.close();
+  } catch (error) {
+    salesRealm?.close();
+    console.log(error);
+    let message = 'Failed to create Sales for Laundry Transaction';
+
+    return {
+      isSuccess: false,
+      message,
+      error,
+    };
+  }
+
+  try {
+    realm.write(() => {
+      laundry.loads = loads;
+      laundry.isPaid = isPaid;
+      laundry.transactBy = transactBy;
+      laundry.transactById = transactById;
+      laundry.addOns = addOns;
+      laundry.totalAmount = totalAmount;
+      laundry.service = service;
+      laundry.deliveryCharge = deliveryCharge;
+      laundry.addOnsPrice = addOnsPrice;
+      laundry.dropOffDate = today;
+      laundry.deliveryStatus = deliveryStatus;
+    });
+    let result = laundry?.toJSON() as Laundry;
+    result._id = result._id.toString();
+    realm.close();
+
+    return {
+      isSuccess: true,
+      message: 'Successfully updated a Laundry',
+      result,
+    };
+  } catch (error: any) {
+    realm.close();
+    console.error(error);
+    let message = 'Failed to update Laundry Transaction';
+
+    return {
+      isSuccess: false,
+      message,
+      error,
+    };
+  }
+};
+
 export const getLaundries = async ({
   limit,
   customer,
@@ -213,7 +392,8 @@ export const getLaundries = async ({
   endDate,
   isPaid,
   isClaimed,
-  dateFilter
+  dateFilter,
+  deliveryStatus,
 }: LaundryGetFilter) => {
   const realm = await openLaundryRealm();
   if (!realm) {
@@ -233,8 +413,14 @@ export const getLaundries = async ({
     args.push(service);
   }
   if (userId) {
-    query.push(`(transactById == $${args.length} OR claimedById == $${args.length})`);
+    query.push(
+      `(transactById == $${args.length} OR claimedById == $${args.length})`
+    );
     args.push(userId);
+  }
+  if (deliveryStatus) {
+    query.push(`deliveryStatus == $${args.length}`);
+    args.push(deliveryStatus);
   }
   if (startDate) {
     query.push(`${dateFilter} >= $${args.length}`);
@@ -450,6 +636,112 @@ export const setPackingQuantity = async (_id: string, quantity: number) => {
     return {
       isSuccess: false,
       message: 'Failed to update Laundry Entry',
+      error,
+    };
+  }
+};
+
+export const setDeliveryStatus = async (
+  _id: string,
+  status: DeliveryStatus,
+  transactBy: string,
+  transactById: string
+) => {
+  const realm = await openLaundryRealm();
+  let salesRealm: Realm | undefined;
+
+  if (!realm)
+    return {
+      isSuccess: false,
+      message: 'Error opening laundry realm db',
+    };
+  try {
+    let laundry = realm.objectForPrimaryKey<Laundry>(
+      LAUNDRY,
+      new Realm.BSON.ObjectID(_id)
+    );
+    if (!laundry) {
+      realm.close();
+      return {
+        isSuccess: false,
+        message: 'Laundry entry not found',
+      };
+    }
+
+    const { service, deliveryStatus, loads, servicePrice, deliveryCharge } =
+      laundry;
+    const today = new Date();
+
+    realm.write(() => {
+      if (!checkIsDeliveryService(service) && !deliveryStatus) {
+        const charge = deliveryChargeRecord['pickup only'];
+        laundry.deliveryCharge = charge;
+        laundry.totalAmount = +(laundry.totalAmount + charge).toFixed(2);
+      }
+      laundry.deliveryStatus = status;
+      if (status === 'completed') {
+        laundry.isPaid = true;
+        laundry.claimedBy = transactBy;
+        laundry.claimedById = transactById;
+        laundry.claimedDate = today;
+      }
+    });
+
+    if (status === 'completed') {
+      salesRealm = await openSalesRealm();
+      const sales: Omit<Sales, '_id'>[] = [];
+
+      if (!laundry.isPaid) {
+        sales.push({
+          product_id: `laundry-${service}`,
+          product_name: `laundry - ${service}`,
+          quantity: loads.length,
+          price: servicePrice,
+          total_price: +(servicePrice * loads.length).toFixed(2),
+          payment: 'cash',
+          date_created: today,
+          transact_by: transactBy,
+          transact_by_user_id: transactById,
+          transaction_id: laundry.transactionId,
+          product_tags: [],
+          saleSource: 'laundry',
+        });
+      }
+      if (!laundry.isPaid || !checkIsDeliveryService(service)) {
+        sales.push({
+          product_id: `laundry-delivery`,
+          product_name: `laundry - delivery`,
+          quantity: 1,
+          price: deliveryCharge ?? 0,
+          total_price: deliveryCharge ?? 0,
+          payment: 'cash',
+          date_created: today,
+          transact_by: transactBy,
+          transact_by_user_id: transactById,
+          transaction_id: laundry.transactionId,
+          product_tags: [],
+          saleSource: 'laundry',
+        });
+      }
+      await createSales(sales, salesRealm);
+    }
+
+    const result = laundry.toJSON() as Laundry;
+    result._id = result._id.toString();
+    realm?.close();
+    salesRealm?.close();
+    return {
+      isSuccess: true,
+      message: 'Successfully update status',
+      result,
+    };
+  } catch (error) {
+    console.log(error);
+    realm?.close();
+    salesRealm?.close();
+    return {
+      isSuccess: false,
+      message: 'Failed to update status',
       error,
     };
   }
