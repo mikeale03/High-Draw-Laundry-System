@@ -12,6 +12,7 @@ import {
   Laundry,
   LaundryPaginatedGetFilter,
 } from 'globalTypes/realm/laundry.types';
+import { deliveryStatusColor } from 'globalUtils/constants';
 import {
   ChangeEvent,
   useCallback,
@@ -20,6 +21,7 @@ import {
   useState,
 } from 'react';
 import {
+  Badge,
   Button,
   Card,
   Col,
@@ -176,6 +178,7 @@ const LaundryEntriesPage = () => {
       navigate('/home/laundry-register', {
         state: selectedLaundry,
       });
+      return;
     }
     const { isSuccess, message, result } = await updateDeliveryStatus(
       selectedLaundry._id,
@@ -318,7 +321,16 @@ const LaundryEntriesPage = () => {
                   <td>{pesoFormat(item.totalAmount)}</td>
                   <td>{item.packingQty.toLocaleString()}</td>
                   <td>{item.isPaid ? 'Yes' : 'No'}</td>
-                  <td className="text-capitalize">{item.deliveryStatus}</td>
+                  <td className="text-capitalize">
+                    {item.deliveryStatus && (
+                      <Badge
+                        bg={deliveryStatusColor[item.deliveryStatus]}
+                        className="p-2"
+                      >
+                        {item.deliveryStatus}
+                      </Badge>
+                    )}
+                  </td>
                   <td>
                     {item.claimedDate &&
                       format(item.claimedDate, 'MM/dd/yyyy hh:mm aaa')}

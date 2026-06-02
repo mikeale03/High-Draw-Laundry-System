@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Button, Col, Modal, Row } from 'react-bootstrap';
 import { pesoFormat } from 'renderer/utils/helper';
-import { Laundry } from 'globalTypes/realm/laundry.types';
+import { DeliveryStatus, Laundry } from 'globalTypes/realm/laundry.types';
+import { deliveryChargeRecord } from 'globalUtils/constants';
 import ConfirmationModal from '../common/modals/confirmation';
 import { checkIsDeliveryService } from './serviceOptions';
 
@@ -17,9 +18,6 @@ type Props = {
   paymentAmount: number;
   onConfirm: (payment: 'cash' | 'gcash') => void;
   onCancel?: () => void;
-  // onSuccess?: () => void;
-  // onExited?: () => void;
-  // onError?: () => void;
 };
 
 const SubmitConfirmationModal = ({
@@ -105,41 +103,61 @@ const SubmitConfirmationModal = ({
               </p>
             </Col>
 
-            <Col xs="6" className="fs-5">
-              loads:
-            </Col>
-            <Col xs="6">
-              <p className="m-0 mb-1 fs-5 text-end">
-                <strong>{loadQty}</strong>
-              </p>
-            </Col>
+            {loadQty > 0 && (
+              <>
+                <Col xs="6" className="fs-5">
+                  loads:
+                </Col>
+                <Col xs="6">
+                  <p className="m-0 mb-1 fs-5 text-end">
+                    <strong>{loadQty}</strong>
+                  </p>
+                </Col>
 
-            <Col xs="6" className="fs-5">
-              add-ons:
-            </Col>
-            <Col xs="6">
-              <p className="m-0 mb-1 fs-5 text-end">
-                <strong>{addOnsQty}</strong>
-              </p>
-            </Col>
+                <Col xs="6" className="fs-5">
+                  add-ons:
+                </Col>
+                <Col xs="6">
+                  <p className="m-0 mb-1 fs-5 text-end">
+                    <strong>{addOnsQty}</strong>
+                  </p>
+                </Col>
+                <Col xs="6" className="fs-5">
+                  payment:
+                </Col>
+                <Col xs="6">
+                  <p className="m-0 mb-1 fs-5 text-end">
+                    <strong>{paymentDisplay}</strong>
+                  </p>
+                </Col>
+              </>
+            )}
 
-            <Col xs="6" className="fs-5">
-              payment:
-            </Col>
-            <Col xs="6">
-              <p className="m-0 mb-1 fs-5 text-end">
-                <strong>{paymentDisplay}</strong>
-              </p>
-            </Col>
+            {checkIsDeliveryService(service) && (
+              <>
+                <Col xs="6" className="fs-5">
+                  delivery charge:
+                </Col>
+                <Col xs="6">
+                  <p className="m-0 mb-1 fs-5 text-end">
+                    <strong>{pesoFormat(deliveryChargeRecord[service])}</strong>
+                  </p>
+                </Col>
+              </>
+            )}
+            {loadQty > 0 && (
+              <>
+                <Col xs="6" className="fs-5">
+                  subtotal:
+                </Col>
+                <Col xs="6">
+                  <p className="m-0 mb-1 fs-5 text-end">
+                    <strong>{pesoFormat(subTotal)}</strong>
+                  </p>
+                </Col>
+              </>
+            )}
 
-            <Col xs="6" className="fs-5">
-              subtotal:
-            </Col>
-            <Col xs="6">
-              <p className="m-0 mb-1 fs-5 text-end">
-                <strong>{pesoFormat(subTotal)}</strong>
-              </p>
-            </Col>
             {isPaid && (
               <>
                 <Col xs="6" className="fs-5">

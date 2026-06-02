@@ -9,7 +9,7 @@ import {
   LaundryUpdatePickupDeliveryData,
 } from '../../globalTypes/realm/laundry.types';
 import { create } from './realm';
-import { createSales, openSalesRealm, SALES, Sales } from './salesRealm';
+import { createSales, openSalesRealm, Sales } from './salesRealm';
 import {
   deliveryChargeRecord,
   laundryServicePriceRecord,
@@ -318,8 +318,8 @@ export const updatePickupDeliveryLaundry = async (
         saleSource: 'laundry',
       });
       sales.push({
-        product_id: `laundry-delivery`,
-        product_name: `laundry - delivery`,
+        product_id: `laundry-delivery charge`,
+        product_name: `laundry - delivery charge`,
         quantity: 1,
         price: deliveryCharge,
         total_price: deliveryCharge,
@@ -709,8 +709,8 @@ export const setDeliveryStatus = async (
       }
       if (!laundry.isPaid || !checkIsDeliveryService(service)) {
         sales.push({
-          product_id: `laundry-delivery`,
-          product_name: `laundry - delivery`,
+          product_id: `laundry-delivery charge`,
+          product_name: `laundry - delivery charge`,
           quantity: 1,
           price: deliveryCharge ?? 0,
           total_price: deliveryCharge ?? 0,

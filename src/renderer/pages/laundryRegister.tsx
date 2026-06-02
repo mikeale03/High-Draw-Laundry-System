@@ -50,7 +50,7 @@ import {
   LaundryService,
 } from 'globalTypes/realm/laundry.types';
 import ServiceOptions from 'renderer/components/laundryRegister/serviceOptions';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 let keyCtr = 1;
 
@@ -89,6 +89,7 @@ const LaundryRegisterPage = () => {
   const [paymentAmount, setPaymentAmount] = useState('');
   const { user } = useContext(UserContext);
   const { state } = useLocation();
+  const navigate = useNavigate();
   const laundryEdit = state as Laundry;
   const itemsKeys = Object.keys(addOnItems);
   const addOnsQty = itemsKeys.length;
@@ -203,19 +204,6 @@ const LaundryRegisterPage = () => {
     setShowSubmitConfirmation(true);
   };
 
-  // const handleSelectSelfService = () => {
-  //   setService(selfServiceType);
-  //   setIsPaid(true);
-  //   setPaymentAmount('');
-  // };
-
-  // const handleSelectSelfServiceOption = (
-  //   option: 'wash and dry' | 'wash only'
-  // ) => {
-  //   setSelfServiceType(option);
-  //   setService(option);
-  // };
-
   const handleServiceSelect = (ser: LaundryService) => {
     if (checkIsDeliveryService(ser)) {
       setIsPaid(false);
@@ -294,6 +282,10 @@ const LaundryRegisterPage = () => {
     setPaymentAmount('');
     setIsPaid(true);
     setRefetchProductSelectOpts(true);
+
+    if (laundryEdit) {
+      navigate('/home/laundry-entries');
+    }
   };
 
   useEffect(() => {
@@ -341,6 +333,7 @@ const LaundryRegisterPage = () => {
       />
 
       <h3>{laundryEdit ? 'Pickup And Delivery Update' : 'Laundry Register'}</h3>
+      {!!laundryEdit && <p className="fw-bold">ID: {laundryEdit.laundryId}</p>}
 
       <Form onSubmit={handleSubmitForm}>
         <Row>
