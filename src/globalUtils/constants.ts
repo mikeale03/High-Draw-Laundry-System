@@ -19,4 +19,12 @@ export const deliveryStatusLevel = {
   ['completed']: 4
 } as const;
 
+export const deliveryStatusColor = {
+  ['for pickup']: 'secondary',
+  ['on process']: 'info',
+  ['pending delivery']: 'danger',
+  ['dispatched']: 'warning',
+  ['completed']: 'success'
+} as const;
+
 export const deliveryStatus = ['for pickup', 'on process', 'pending delivery', 'dispatched', 'completed'] as const;
