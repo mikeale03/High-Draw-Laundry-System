@@ -324,6 +324,7 @@ const LaundryEntriesPage = () => {
                   <td className="text-capitalize">
                     {item.deliveryStatus && (
                       <Badge
+                        title={item.customerAddress}
                         bg={deliveryStatusColor[item.deliveryStatus]}
                         className="p-2"
                       >

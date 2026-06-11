@@ -12,6 +12,7 @@ export class MobileNumberSchema extends Realm.Object<MobileNumber> {
       number: { type: 'string', indexed: true },
       mobile: 'string?',
       name: 'string',
+      address: { type: 'string', default: '' },
     },
     primaryKey: 'number',
   };
@@ -22,7 +23,7 @@ export const openMobileNumberRealm = async () => {
     const realm = await Realm.open({
       path: '../realm/mobile-number',
       schema: [MobileNumberSchema],
-      schemaVersion: 2,
+      schemaVersion: 3,
       onMigration: (oldRealm, newRealm) => {
         // only apply this change if upgrading to schemaVersion 2
         if (oldRealm.schemaVersion < 2) {
@@ -118,6 +119,7 @@ export const updateMobileNumber = async (
       customer.mobile = updates.mobile;
       customer.name = updates.name;
       customer.number = updates.mobile || customer.number;
+      customer.address = updates.address;
     });
 
     const result = customer.toJSON();

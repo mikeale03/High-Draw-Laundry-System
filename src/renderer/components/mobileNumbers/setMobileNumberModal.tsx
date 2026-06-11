@@ -17,6 +17,7 @@ import { MobileNumber } from 'globalTypes/realm/mobileNumber.types';
 export type CustomerForm = {
   mobile?: string | null;
   name: string;
+  address?: string;
 };
 
 export type Props = {
@@ -35,6 +36,7 @@ const SetMobileNumberModal = ({
   const [customer, setMobileNumber] = useState<CustomerForm>({
     mobile: '',
     name: '',
+    address: '',
   });
 
   const handleChange = (updates: Partial<CustomerForm>) => {
@@ -47,8 +49,8 @@ const SetMobileNumberModal = ({
 
   const handleConfirm = async (e: FormEvent) => {
     e.preventDefault();
-    const { mobile, name } = customer;
-    const data = { mobile: mobile?.trim() || '', name };
+    const { mobile, ...rest } = customer;
+    const data = { mobile: mobile?.trim() || '', ...rest };
     const response = selectedMobileNumber
       ? await updateMobileNumber(selectedMobileNumber.number, data)
       : await createMobileNumber(data);
@@ -67,6 +69,7 @@ const SetMobileNumberModal = ({
       selectedMobileNumber ?? {
         mobile: '',
         name: '',
+        address: '',
       }
     );
   };
@@ -102,6 +105,14 @@ const SetMobileNumberModal = ({
               value={customer.name}
               onChange={(e) => handleChange({ name: e.target.value })}
               required
+            />
+          </FormGroup>
+          <FormGroup className="mb-3">
+            <FormLabel>Address</FormLabel>
+            <FormControl
+              value={customer.address ?? ''}
+              as="textarea"
+              onChange={(e) => handleChange({ address: e.target.value })}
             />
           </FormGroup>
         </Modal.Body>

@@ -48,6 +48,7 @@ const SalesPage = () => {
   const [isGroupByProduct, setIsGroupByProduct] = useState(false);
   const [showVoidCodeModal, setShowVoidCodeModal] = useState(false);
   const [isVoid, setIsVoid] = useState(false);
+  const [hoveredTransactionId, setHoveredTransactionId] = useState<string>('');
   const { user } = useContext(UserContext);
   const salesFilter = useSalesFilterStore((filterState) => filterState.state);
 
@@ -295,8 +296,19 @@ const SalesPage = () => {
                 </thead>
                 <tbody>
                   {sales.map((d) => (
-                    <tr key={d._id}>
-                      <td className="text-capitalize">
+                    <tr
+                      key={d._id}
+                      onMouseOver={() =>
+                        setHoveredTransactionId(d.transaction_id)
+                      }
+                      onMouseLeave={() => setHoveredTransactionId('')}
+                      onFocus={() => setHoveredTransactionId(d.transaction_id)}
+                    >
+                      <td
+                        className={`text-capitalize ${
+                          hoveredTransactionId === d.transaction_id && 'fw-bold'
+                        }`}
+                      >
                         {d.product_name}{' '}
                         <span className="text-primary">
                           {d.product_id === 'laundry-add-on' ? '(Add-On)' : ''}

@@ -42,6 +42,7 @@ export class LaundrySchema extends Realm.Object<Laundry> {
       service: 'string',
       servicePrice: 'float',
       customer: { type: 'string', indexed: true },
+      customerAddress: { type: 'string', default: '' },
       loads: 'float[]',
       deliveryCharge: { type: 'float', default: 0 },
       deliveryStatus: { type: 'string', default: '' },
@@ -69,7 +70,7 @@ export const openLaundryRealm = async () => {
     const realm = await Realm.open({
       path: '../realm/laundry',
       schema: [LaundrySchema, AddOn],
-      schemaVersion: 4,
+      schemaVersion: 5,
     });
     return realm;
   } catch (error) {
@@ -239,6 +240,7 @@ export const updatePickupDeliveryLaundry = async (
     addOnsPrice,
     deliveryCharge,
     deliveryStatus,
+    customerAddress,
   } = data;
   const today = new Date();
 
@@ -360,6 +362,7 @@ export const updatePickupDeliveryLaundry = async (
       laundry.addOnsPrice = addOnsPrice;
       laundry.dropOffDate = today;
       laundry.deliveryStatus = deliveryStatus;
+      laundry.customerAddress = customerAddress;
     });
     let result = laundry?.toJSON() as Laundry;
     result._id = result._id.toString();
@@ -520,13 +523,14 @@ export const claimLaundry = async ({
       };
     }
 
+    const sales: Omit<Sales, '_id'>[] = []
+    let productsRealm: Realm | undefined;
+
     if (!laundry.isPaid) {
-      let productsRealm: Realm | undefined;
-      const salesRealm = await openSalesRealm();
       const laundryQuantity = laundry.loads.length;
       const laundryPrice = laundryServicePriceRecord[laundry.service];
 
-      const sales: Omit<Sales, '_id'>[] = [
+      sales.push(
         {
           product_id: `laundry-${laundry.service}`,
           product_name: `laundry - ${laundry.service}`,
@@ -540,8 +544,8 @@ export const claimLaundry = async ({
           transaction_id: laundry.transactionId,
           product_tags: [],
           saleSource: 'laundry',
-        },
-      ];
+        }
+      );
       if (laundry.addOns.length) {
         const { addOns } = laundry;
         productsRealm = await openProductsRealm();
@@ -570,10 +574,33 @@ export const claimLaundry = async ({
           }
         });
       }
+    }
+
+    if (laundry.deliveryCharge) {
+      sales.push({
+        product_id: `laundry-delivery charge`,
+        product_name: `laundry - delivery charge`,
+        quantity: 1,
+        price: laundry.deliveryCharge ?? 0,
+        total_price: laundry.deliveryCharge ?? 0,
+        payment: 'cash',
+        date_created: new Date(),
+        transact_by: claimedBy,
+        transact_by_user_id: claimedById,
+        transaction_id: laundry.transactionId,
+        product_tags: [],
+        saleSource: 'laundry',
+      });
+    }
+
+    if (sales.length) {
+      const salesRealm = await openSalesRealm();
       await createSales(sales, salesRealm);
       salesRealm.close();
-      productsRealm?.close();
     }
+
+    productsRealm?.close();
+
     realm.write(() => {
       laundry.claimedDate = new Date();
       laundry.isPaid = true;
@@ -671,6 +698,8 @@ export const setDeliveryStatus = async (
     const { service, deliveryStatus, loads, servicePrice, deliveryCharge } =
       laundry;
     const today = new Date();
+    const isCreateLaundrySale = !laundry.isPaid;
+    const isCreateDeliverySale = !laundry.isPaid || !checkIsDeliveryService(service)
 
     realm.write(() => {
       if (!checkIsDeliveryService(service) && !deliveryStatus) {
@@ -691,7 +720,7 @@ export const setDeliveryStatus = async (
       salesRealm = await openSalesRealm();
       const sales: Omit<Sales, '_id'>[] = [];
 
-      if (!laundry.isPaid) {
+      if (isCreateLaundrySale) {
         sales.push({
           product_id: `laundry-${service}`,
           product_name: `laundry - ${service}`,
@@ -707,7 +736,7 @@ export const setDeliveryStatus = async (
           saleSource: 'laundry',
         });
       }
-      if (!laundry.isPaid || !checkIsDeliveryService(service)) {
+      if (isCreateDeliverySale) {
         sales.push({
           product_id: `laundry-delivery charge`,
           product_name: `laundry - delivery charge`,

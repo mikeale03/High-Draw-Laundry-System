@@ -7,13 +7,14 @@ import {
   getMobileNumbers,
   updateMobileNumber,
 } from '../service/mobileNumbersRealm';
+import { Customer } from '../../globalTypes/realm/mobileNumber.types';
 
 const setMobileNumbersEventHandler = (ipcMain: IpcMain) => {
   ipcMain.handle(
     Channels.create,
     async (
       event: IpcMainInvokeEvent,
-      data: { mobile?: string; name: string }
+      data: Customer
     ) => {
       const result = await createMobileNumber(data);
       return result;
@@ -38,7 +39,7 @@ const setMobileNumbersEventHandler = (ipcMain: IpcMain) => {
     async (
       event: IpcMainInvokeEvent,
       currentNumber,
-      data: { mobile?: string; name: string }
+      data: Customer
     ) => {
       const result = await updateMobileNumber(currentNumber, data);
       return result;
