@@ -15,6 +15,7 @@ export type Laundry = {
   service: LaundryService;
   servicePrice: number;
   customer: string;
+  customerAddress?: string;
   loads: number[];
   deliveryCharge?: number;
   deliveryStatus?: DeliveryStatus;
@@ -42,6 +43,7 @@ export type LaundryUpdatePickupDeliveryData = {
   service: LaundryService;
   deliveryCharge: number;
   deliveryStatus: DeliveryStatus;
+  customerAddress?: string;
   addOns: AddOn[];
   addOnsPrice: number;
   isPaid: boolean;

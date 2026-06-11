@@ -126,6 +126,7 @@ function CustomersPage() {
               <tr>
                 <th>Number</th>
                 <th>Name</th>
+                <th>Address</th>
                 <th> </th>
               </tr>
             </thead>
@@ -134,6 +135,7 @@ function CustomersPage() {
                 <tr key={number.number}>
                   <td>{number.mobile}</td>
                   <td>{number.name}</td>
+                  <td>{number.address}</td>
                   <td>
                     <FontAwesomeIcon
                       onClick={() => handleSetMobileNumberModal(number)}

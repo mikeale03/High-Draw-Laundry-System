@@ -44,11 +44,7 @@ import {
   deliveryChargeRecord,
   laundryServicePriceRecord,
 } from 'globalUtils/constants';
-import {
-  DeliveryStatus,
-  Laundry,
-  LaundryService,
-} from 'globalTypes/realm/laundry.types';
+import { Laundry, LaundryService } from 'globalTypes/realm/laundry.types';
 import ServiceOptions from 'renderer/components/laundryRegister/serviceOptions';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -81,6 +77,7 @@ const LaundryRegisterPage = () => {
   const [selectedItem, setSelectedItem] = useState<Product | undefined>(); // add on item to edit
   const [lastUpdatedId, setLastUpdatedId] = useState('');
   const [customer, setCustomer] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
   const [customerSelectValue, setCustomerSelectValue] =
     useState<CustomerSelectOption | null>(null);
   const [customerNumber, setCustomerNumber] = useState('');
@@ -192,8 +189,9 @@ const LaundryRegisterPage = () => {
   const handleCustomerSelect = (opt: CustomerSelectOption) => {
     setCustomerSelectValue(opt);
     if (opt) {
-      const { name, mobile } = opt.customer;
+      const { name, mobile, address } = opt.customer;
       setCustomer(name);
+      setCustomerAddress(address ?? '');
       mobile && setCustomerNumber(mobile);
     }
   };
@@ -246,6 +244,7 @@ const LaundryRegisterPage = () => {
           servicePrice,
           customer,
           customerNumber,
+          customerAddress,
           loads: loads.map((v) => +v.value),
           addOns: Object.values(addOnItems).map((v) => ({
             productId: v._id,
@@ -291,8 +290,14 @@ const LaundryRegisterPage = () => {
   useEffect(() => {
     console.log(laundryEdit);
     if (laundryEdit) {
-      const { customer: c, customerNumber: cn, service: s } = laundryEdit;
+      const {
+        customer: c,
+        customerNumber: cn,
+        service: s,
+        customerAddress: ca,
+      } = laundryEdit;
       setCustomer(c);
+      setCustomerAddress(ca ?? '');
       setCustomerSelectValue({
         label: `${c} ${cn && `- cell#: ${cn}`}`,
         value: c,
@@ -386,7 +391,7 @@ const LaundryRegisterPage = () => {
               </>
             )}
             <div className="my-3 me-3">
-              <FormGroup>
+              <FormGroup className="mb-3">
                 <FormLabel className="fw-bold">Customer</FormLabel>
                 <CustomerSelect
                   value={customerSelectValue}
@@ -394,6 +399,15 @@ const LaundryRegisterPage = () => {
                   disabled={!!laundryEdit}
                 />
               </FormGroup>
+              {checkIsDeliveryService(service) && (
+                <FormGroup>
+                  <FormLabel className="fw-bold">Customer Address</FormLabel>
+                  <FormControl
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                  />
+                </FormGroup>
+              )}
             </div>
             <div className="d-flex">
               {checkIsDeliveryService(service) && (
