@@ -230,6 +230,7 @@ const LaundryRegisterPage = () => {
             price: v.price,
             totalPrice: v.totalPrice,
           })),
+          customerAddress,
           addOnsPrice,
           deliveryCharge,
           deliveryStatus: 'on process',
