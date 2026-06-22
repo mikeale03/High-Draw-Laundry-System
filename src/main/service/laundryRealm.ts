@@ -411,7 +411,11 @@ export const getLaundries = async ({
   query.push(`customer CONTAINS[c] $${args.length}`);
   args.push(customer);
 
-  if (service) {
+  if (service === 'pickup and delivery') {
+    query.push(`(service == $${args.length} OR service == $${args.length + 1})`);
+    args.push(service);
+    args.push('pickup only');
+  } else if (service) {
     query.push(`service == $${args.length}`);
     args.push(service);
   }

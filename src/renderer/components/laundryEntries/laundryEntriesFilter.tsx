@@ -79,6 +79,7 @@ const LaundryEntriesFilter = () => {
           <option value="drop-off">Drop-Off</option>
           <option value="wash and dry">Wash and Dry</option>
           <option value="wash only">Wash Only</option>
+          <option value="pickup and delivery">Pickup and Delivery</option>
         </FormSelect>
       </Col>
 
