@@ -15,6 +15,7 @@ type Props = {
   service: Laundry['service'];
   customer: string;
   isPaid: boolean;
+  deliveryCharge: number;
   paymentAmount: number;
   onConfirm: (payment: 'cash' | 'gcash') => void;
   onCancel?: () => void;
@@ -29,6 +30,7 @@ const SubmitConfirmationModal = ({
   customer,
   service,
   isPaid,
+  deliveryCharge,
   paymentAmount,
   onConfirm,
   onCancel,
@@ -140,7 +142,7 @@ const SubmitConfirmationModal = ({
                 </Col>
                 <Col xs="6">
                   <p className="m-0 mb-1 fs-5 text-end">
-                    <strong>{pesoFormat(deliveryChargeRecord[service])}</strong>
+                    <strong>{pesoFormat(deliveryCharge)}</strong>
                   </p>
                 </Col>
               </>

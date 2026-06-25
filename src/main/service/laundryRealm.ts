@@ -266,8 +266,6 @@ export const updatePickupDeliveryLaundry = async (
     }
 
     const { servicePrice } = laundry;
-    let deliveryCharge =
-      laundry.deliveryCharge || deliveryChargeRecord[service];
 
     if (addOns.length) {
       productsRealm = await openProductsRealm();
@@ -319,20 +317,23 @@ export const updatePickupDeliveryLaundry = async (
         product_tags: [],
         saleSource: 'laundry',
       });
-      sales.push({
-        product_id: `laundry-delivery charge`,
-        product_name: `laundry - delivery charge`,
-        quantity: 1,
-        price: deliveryCharge,
-        total_price: deliveryCharge,
-        payment,
-        date_created: today,
-        transact_by: transactBy,
-        transact_by_user_id: transactById,
-        transaction_id: laundry.transactionId,
-        product_tags: [],
-        saleSource: 'laundry',
-      });
+
+      if (deliveryCharge) {
+        sales.push({
+          product_id: `laundry-delivery charge`,
+          product_name: `laundry - delivery charge`,
+          quantity: 1,
+          price: deliveryCharge,
+          total_price: deliveryCharge,
+          payment,
+          date_created: today,
+          transact_by: transactBy,
+          transact_by_user_id: transactById,
+          transaction_id: laundry.transactionId,
+          product_tags: [],
+          saleSource: 'laundry',
+        });
+      }
       await createSales(sales, salesRealm);
     }
     salesRealm?.close();
@@ -703,7 +704,7 @@ export const setDeliveryStatus = async (
       laundry;
     const today = new Date();
     const isCreateLaundrySale = !laundry.isPaid;
-    const isCreateDeliverySale = !laundry.isPaid || !checkIsDeliveryService(service)
+    const isCreateDeliverySale = (!laundry.isPaid && deliveryCharge) || !checkIsDeliveryService(service)
 
     realm.write(() => {
       if (!checkIsDeliveryService(service) && !deliveryStatus) {

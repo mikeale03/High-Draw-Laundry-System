@@ -12,7 +12,11 @@ import {
   Laundry,
   LaundryPaginatedGetFilter,
 } from 'globalTypes/realm/laundry.types';
-import { deliveryStatusColor } from 'globalUtils/constants';
+import {
+  deliveryChargeRecord,
+  deliveryStatusColor,
+} from 'globalUtils/constants';
+import { checkIsDeliveryService } from 'globalUtils/helper';
 import {
   ChangeEvent,
   useCallback,
@@ -318,7 +322,19 @@ const LaundryEntriesPage = () => {
                   </td>
                   <td>{pesoFormat(item.addOnsPrice)}</td>
                   <td>{format(item.dropOffDate, 'MM/dd/yyyy hh:mm aaa')}</td>
-                  <td>{pesoFormat(item.totalAmount)}</td>
+                  <td
+                    className={
+                      checkIsDeliveryService(item.service) &&
+                      item.deliveryCharge !== deliveryChargeRecord[item.service]
+                        ? 'text-danger'
+                        : ''
+                    }
+                    title={`delivery charge: ${pesoFormat(
+                      item.deliveryCharge ?? 0
+                    )}`}
+                  >
+                    {pesoFormat(item.totalAmount)}
+                  </td>
                   <td>{item.packingQty.toLocaleString()}</td>
                   <td>{item.isPaid ? 'Yes' : 'No'}</td>
                   <td className="text-capitalize">
