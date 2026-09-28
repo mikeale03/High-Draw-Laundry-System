@@ -110,7 +110,7 @@ export const createLaundry = async (data: LaundryCreateData) => {
 
     if (lastLaundry.length) {
       const { laundryId: id } = lastLaundry[0].toJSON() as Laundry;
-      const num = id ? +id.split('-')[1] : 1;
+      const num = id ? +id.split('-')[1] + 1 : 1;
       laundryId = `${laundryId}-${String(num).padStart(2, '0')}`;
     } else {
       laundryId = `${laundryId}-01`;
@@ -156,6 +156,7 @@ export const createLaundry = async (data: LaundryCreateData) => {
       sales.push({
         product_id: `laundry-${data.service}`,
         product_name: `laundry - ${data.service}`,
+        product_category: 'Laundry',
         quantity: laundryQuantity,
         price: laundryPrice,
         total_price: +(laundryPrice * laundryQuantity).toFixed(2),
@@ -306,6 +307,7 @@ export const updatePickupDeliveryLaundry = async (
       sales.push({
         product_id: `laundry-${service}`,
         product_name: `laundry - ${service}`,
+        product_category: 'Laundry',
         quantity: laundryQuantity,
         price: servicePrice,
         total_price: +(servicePrice * laundryQuantity).toFixed(2),
@@ -322,6 +324,7 @@ export const updatePickupDeliveryLaundry = async (
         sales.push({
           product_id: `laundry-delivery charge`,
           product_name: `laundry - delivery charge`,
+          product_category: 'Laundry',
           quantity: 1,
           price: deliveryCharge,
           total_price: deliveryCharge,
@@ -539,6 +542,7 @@ export const claimLaundry = async ({
         {
           product_id: `laundry-${laundry.service}`,
           product_name: `laundry - ${laundry.service}`,
+          product_category: 'Laundry',
           quantity: laundryQuantity,
           price: laundryPrice,
           total_price: +(laundryPrice * laundryQuantity).toFixed(2),
@@ -585,6 +589,7 @@ export const claimLaundry = async ({
       sales.push({
         product_id: `laundry-delivery charge`,
         product_name: `laundry - delivery charge`,
+        product_category: 'Laundry',
         quantity: 1,
         price: laundry.deliveryCharge ?? 0,
         total_price: laundry.deliveryCharge ?? 0,
@@ -729,6 +734,7 @@ export const setDeliveryStatus = async (
         sales.push({
           product_id: `laundry-${service}`,
           product_name: `laundry - ${service}`,
+          product_category: 'Laundry',
           quantity: loads.length,
           price: servicePrice,
           total_price: +(servicePrice * loads.length).toFixed(2),
@@ -745,6 +751,7 @@ export const setDeliveryStatus = async (
         sales.push({
           product_id: `laundry-delivery charge`,
           product_name: `laundry - delivery charge`,
+          product_category: 'Laundry',
           quantity: 1,
           price: deliveryCharge ?? 0,
           total_price: deliveryCharge ?? 0,
