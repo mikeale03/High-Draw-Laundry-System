@@ -110,7 +110,7 @@ export const createLaundry = async (data: LaundryCreateData) => {
 
     if (lastLaundry.length) {
       const { laundryId: id } = lastLaundry[0].toJSON() as Laundry;
-      const num = id ? +id.split('-')[1] : 1;
+      const num = id ? +id.split('-')[1] + 1 : 1;
       laundryId = `${laundryId}-${String(num).padStart(2, '0')}`;
     } else {
       laundryId = `${laundryId}-01`;
@@ -156,6 +156,7 @@ export const createLaundry = async (data: LaundryCreateData) => {
       sales.push({
         product_id: `laundry-${data.service}`,
         product_name: `laundry - ${data.service}`,
+        product_category: 'Laundry',
         quantity: laundryQuantity,
         price: laundryPrice,
         total_price: +(laundryPrice * laundryQuantity).toFixed(2),
@@ -266,8 +267,6 @@ export const updatePickupDeliveryLaundry = async (
     }
 
     const { servicePrice } = laundry;
-    let deliveryCharge =
-      laundry.deliveryCharge || deliveryChargeRecord[service];
 
     if (addOns.length) {
       productsRealm = await openProductsRealm();
@@ -308,6 +307,7 @@ export const updatePickupDeliveryLaundry = async (
       sales.push({
         product_id: `laundry-${service}`,
         product_name: `laundry - ${service}`,
+        product_category: 'Laundry',
         quantity: laundryQuantity,
         price: servicePrice,
         total_price: +(servicePrice * laundryQuantity).toFixed(2),
@@ -319,20 +319,24 @@ export const updatePickupDeliveryLaundry = async (
         product_tags: [],
         saleSource: 'laundry',
       });
-      sales.push({
-        product_id: `laundry-delivery charge`,
-        product_name: `laundry - delivery charge`,
-        quantity: 1,
-        price: deliveryCharge,
-        total_price: deliveryCharge,
-        payment,
-        date_created: today,
-        transact_by: transactBy,
-        transact_by_user_id: transactById,
-        transaction_id: laundry.transactionId,
-        product_tags: [],
-        saleSource: 'laundry',
-      });
+
+      if (deliveryCharge) {
+        sales.push({
+          product_id: `laundry-delivery charge`,
+          product_name: `laundry - delivery charge`,
+          product_category: 'Laundry',
+          quantity: 1,
+          price: deliveryCharge,
+          total_price: deliveryCharge,
+          payment,
+          date_created: today,
+          transact_by: transactBy,
+          transact_by_user_id: transactById,
+          transaction_id: laundry.transactionId,
+          product_tags: [],
+          saleSource: 'laundry',
+        });
+      }
       await createSales(sales, salesRealm);
     }
     salesRealm?.close();
@@ -538,6 +542,7 @@ export const claimLaundry = async ({
         {
           product_id: `laundry-${laundry.service}`,
           product_name: `laundry - ${laundry.service}`,
+          product_category: 'Laundry',
           quantity: laundryQuantity,
           price: laundryPrice,
           total_price: +(laundryPrice * laundryQuantity).toFixed(2),
@@ -584,6 +589,7 @@ export const claimLaundry = async ({
       sales.push({
         product_id: `laundry-delivery charge`,
         product_name: `laundry - delivery charge`,
+        product_category: 'Laundry',
         quantity: 1,
         price: laundry.deliveryCharge ?? 0,
         total_price: laundry.deliveryCharge ?? 0,
@@ -703,7 +709,7 @@ export const setDeliveryStatus = async (
       laundry;
     const today = new Date();
     const isCreateLaundrySale = !laundry.isPaid;
-    const isCreateDeliverySale = !laundry.isPaid || !checkIsDeliveryService(service)
+    const isCreateDeliverySale = (!laundry.isPaid && deliveryCharge) || !checkIsDeliveryService(service)
 
     realm.write(() => {
       if (!checkIsDeliveryService(service) && !deliveryStatus) {
@@ -728,6 +734,7 @@ export const setDeliveryStatus = async (
         sales.push({
           product_id: `laundry-${service}`,
           product_name: `laundry - ${service}`,
+          product_category: 'Laundry',
           quantity: loads.length,
           price: servicePrice,
           total_price: +(servicePrice * loads.length).toFixed(2),
@@ -744,6 +751,7 @@ export const setDeliveryStatus = async (
         sales.push({
           product_id: `laundry-delivery charge`,
           product_name: `laundry - delivery charge`,
+          product_category: 'Laundry',
           quantity: 1,
           price: deliveryCharge ?? 0,
           total_price: deliveryCharge ?? 0,

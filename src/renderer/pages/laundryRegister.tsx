@@ -84,6 +84,7 @@ const LaundryRegisterPage = () => {
   const [isPaid, setIsPaid] = useState(true);
   // const [payment, setPayment] = useState<'cash' | 'gcash'>('cash');
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
   const { user } = useContext(UserContext);
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -101,10 +102,6 @@ const LaundryRegisterPage = () => {
     });
     return twoDecimals(t);
   }, [itemsKeys, addOnItems]);
-
-  const deliveryCharge = checkIsDeliveryService(service)
-    ? deliveryChargeRecord[service]
-    : 0;
 
   const subTotal = twoDecimals(
     addOnsPrice + totalServicePrice + deliveryCharge
@@ -206,8 +203,10 @@ const LaundryRegisterPage = () => {
     if (checkIsDeliveryService(ser)) {
       setIsPaid(false);
       setLoads([]);
+      setDeliveryCharge(deliveryChargeRecord[ser]);
     } else if (checkIsDeliveryService(service)) {
       setLoads([{ key: 1, value: '' }]);
+      setDeliveryCharge(0);
     }
     if (checkIsSelfService(ser)) {
       setIsPaid(true);
@@ -305,6 +304,7 @@ const LaundryRegisterPage = () => {
         customer: c as any,
       });
       setService(s);
+      setDeliveryCharge(laundryEdit.deliveryCharge ?? 0);
     } else {
       setCustomer('');
       setCustomerSelectValue(null);
@@ -313,6 +313,7 @@ const LaundryRegisterPage = () => {
       setIsPaid(true);
       setService('drop-off');
       setLoads([{ key: 1, value: '' }]);
+      setDeliveryCharge(0);
     }
   }, [laundryEdit]);
 
@@ -334,6 +335,7 @@ const LaundryRegisterPage = () => {
         customer={customer}
         service={service}
         isPaid={isPaid}
+        deliveryCharge={deliveryCharge}
         paymentAmount={+paymentAmount}
         onConfirm={handleConfirm}
       />
@@ -417,7 +419,14 @@ const LaundryRegisterPage = () => {
                     Pickup and Delivery Option
                   </FormLabel>
                   <div className="d-flex">
-                    <div onClick={() => setService('pickup and delivery')}>
+                    <div
+                      onClick={() => {
+                        setService('pickup and delivery');
+                        setDeliveryCharge(
+                          deliveryChargeRecord['pickup and delivery']
+                        );
+                      }}
+                    >
                       <FormCheck
                         className="me-3"
                         label="Pickup and Delivery"
@@ -426,11 +435,19 @@ const LaundryRegisterPage = () => {
                         onChange={(e) => {
                           if (e.target.checked) {
                             setService('pickup and delivery');
+                            setDeliveryCharge(
+                              deliveryChargeRecord['pickup and delivery']
+                            );
                           }
                         }}
                       />
                     </div>
-                    <div onClick={() => setService('pickup only')}>
+                    <div
+                      onClick={() => {
+                        setService('pickup only');
+                        setDeliveryCharge(deliveryChargeRecord['pickup only']);
+                      }}
+                    >
                       <FormCheck
                         label="Pickup Only"
                         type="radio"
@@ -438,6 +455,9 @@ const LaundryRegisterPage = () => {
                         onChange={(e) => {
                           if (e.target.checked) {
                             setService('pickup only');
+                            setDeliveryCharge(
+                              deliveryChargeRecord['pickup only']
+                            );
                           }
                         }}
                       />
@@ -561,6 +581,8 @@ const LaundryRegisterPage = () => {
               isPaid={isPaid}
               paymentAmount={paymentAmount}
               setPaymentAmount={setPaymentAmount}
+              deliveryCharge={deliveryCharge}
+              setDeliveryCharge={setDeliveryCharge}
             />
           </Col>
         </Row>
